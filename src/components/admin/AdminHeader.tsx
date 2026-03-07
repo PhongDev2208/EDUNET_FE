@@ -1,0 +1,215 @@
+// Admin Header Component
+import React from 'react';
+import { 
+  Layout, 
+  Input, 
+  Badge, 
+  Avatar, 
+  Dropdown, 
+  Space, 
+  Button,
+  Tooltip,
+  Typography,
+  List,
+} from 'antd';
+import { 
+  SearchOutlined, 
+  BellOutlined, 
+  UserOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  MoonOutlined,
+  SunOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons';
+import { Link } from 'react-router-dom';
+import type { MenuProps } from 'antd';
+import type { AdminNotification } from '../../types/admin';
+
+const { Header } = Layout;
+const { Text } = Typography;
+
+interface AdminHeaderProps {
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+  };
+  isDark: boolean;
+  onToggleTheme: () => void;
+  onLogout: () => void;
+  notifications?: AdminNotification[];
+  onNotificationClick?: (notification: AdminNotification) => void;
+  onMarkAllRead?: () => void;
+  collapsed: boolean;
+}
+
+const AdminHeader: React.FC<AdminHeaderProps> = ({
+  user,
+  isDark,
+  onToggleTheme,
+  onLogout,
+  notifications = [],
+  onNotificationClick,
+  onMarkAllRead,
+  collapsed,
+}) => {
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const getNotificationIcon = (type: AdminNotification['type']) => {
+    const colors = {
+      info: '#1890ff',
+      success: '#52c41a',
+      warning: '#faad14',
+      error: '#f5222d',
+    };
+    return <CheckCircleOutlined style={{ color: colors[type] }} />;
+  };
+
+  const notificationContent = (
+    <div className="w-80 max-h-96 overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
+        <Text strong>Thông báo</Text>
+        {unreadCount > 0 && onMarkAllRead && (
+          <Button type="link" size="small" onClick={onMarkAllRead}>
+            Đánh dấu đã đọc
+          </Button>
+        )}
+      </div>
+      <div className="max-h-72 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="p-6 text-center text-gray-400">
+            Không có thông báo mới
+          </div>
+        ) : (
+          <List
+            dataSource={notifications.slice(0, 5)}
+            renderItem={(item) => (
+              <List.Item
+                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-3 ${
+                  !item.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                }`}
+                onClick={() => onNotificationClick?.(item)}
+              >
+                <List.Item.Meta
+                  avatar={getNotificationIcon(item.type)}
+                  title={<Text className="text-sm">{item.title}</Text>}
+                  description={
+                    <Text type="secondary" className="text-xs line-clamp-2">
+                      {item.message}
+                    </Text>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </div>
+      <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-center">
+        <Link to="/admin/notifications" className="text-blue-500 text-sm">
+          Xem tất cả
+        </Link>
+      </div>
+    </div>
+  );
+
+  const userMenuItems: MenuProps['items'] = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: <Link to="/admin/settings">Hồ sơ</Link>,
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: <Link to="/admin/settings">Cài đặt</Link>,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Đăng xuất',
+      danger: true,
+      onClick: onLogout,
+    },
+  ];
+
+  return (
+    <Header
+      className="admin-header"
+      style={{
+        padding: '0 24px',
+        backgroundColor: 'var(--bg-primary)',
+        borderBottom: '1px solid var(--border-color)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 64,
+        marginLeft: collapsed ? 80 : 260,
+        transition: 'margin-left 0.2s',
+      }}
+    >
+      {/* Search */}
+      <div className="flex-1 max-w-md">
+        <Input
+          placeholder="Tìm kiếm..."
+          prefix={<SearchOutlined className="text-gray-400" />}
+          className="rounded-lg"
+          style={{ backgroundColor: 'var(--bg-secondary)' }}
+        />
+      </div>
+
+      {/* Right Actions */}
+      <Space size="middle">
+        {/* Theme Toggle */}
+        <Tooltip title={isDark ? 'Chế độ sáng' : 'Chế độ tối'}>
+          <Button
+            type="text"
+            icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+            onClick={onToggleTheme}
+            className="flex items-center justify-center"
+          />
+        </Tooltip>
+
+        {/* Notifications */}
+        <Dropdown
+          dropdownRender={() => notificationContent}
+          trigger={['click']}
+          placement="bottomRight"
+        >
+          <Badge count={unreadCount} size="small" offset={[-2, 2]}>
+            <Button
+              type="text"
+              icon={<BellOutlined />}
+              className="flex items-center justify-center"
+            />
+          </Badge>
+        </Dropdown>
+
+        {/* User Menu */}
+        <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
+          <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-2 py-1 transition-colors">
+            <Avatar 
+              src={user?.avatar} 
+              icon={<UserOutlined />}
+              size="small"
+            />
+            <div className="hidden md:block">
+              <Text className="text-sm font-medium">
+                {user?.firstName} {user?.lastName}
+              </Text>
+            </div>
+          </div>
+        </Dropdown>
+      </Space>
+    </Header>
+  );
+};
+
+export default AdminHeader;

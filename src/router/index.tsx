@@ -1,0 +1,186 @@
+import { createBrowserRouter } from 'react-router-dom';
+import AppLayout from '../components/Layout';
+import Home from '../pages/user/Home';
+import ListCourse from '../pages/user/ListCourse';
+import DetailCourse from '../pages/user/DetailCourse';
+import Schedule from '../pages/user/Schedule';
+import MyCourse from '../pages/user/MyCourse';
+import DetailMyCourse from '../pages/user/MyCourse/DetailMyCourse';
+import Classroom from '../pages/user/MyCourse/Classroom';
+import Material from '../pages/user/MyCourse/Material';
+import Assignment from '../pages/user/MyCourse/Assignment';
+import Quizz from '../pages/user/MyCourse/Quizz';
+import Practics from '../pages/user/MyCourse/Quizz/Practics';
+import Answer from '../pages/user/MyCourse/Quizz/Answer';
+import DetailAnswer from '../pages/user/MyCourse/Quizz/DetailAnswer';
+import Chat from '../pages/user/Chat';
+import Profile from '../pages/user/Profile';
+import Login from '../pages/auth/Login';
+import RegisterStudent from '../pages/auth/Register/Student';
+import RegisterTeacher from '../pages/auth/Register/Teacher';
+
+// Admin imports
+import { AdminLayout } from '../components/admin';
+import {
+  AdminLogin,
+  AdminForgotPassword,
+  AdminDashboard,
+  CourseManagement,
+  TeacherManagement,
+  EmployeeManagement,
+  RecruitmentManagement,
+  SupportManagement,
+  PermissionManagement,
+  RevenueManagement,
+  AdminProfile,
+} from '../pages/admin';
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppLayout />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: 'courses',
+        element: <ListCourse />,
+      },
+      {
+        path: 'courses/:id',
+        element: <DetailCourse />,
+      },
+      {
+        path: 'schedule',
+        element: <Schedule />,
+      },
+      {
+        path: 'chat',
+        element: <Chat />,
+      },
+      {
+        path: 'profile',
+        element: <Profile />,
+      },
+      {
+        path: 'my-course',
+        children: [
+          {
+            index: true,
+            element: <MyCourse />,
+          },
+          {
+            path: 'detail/:id',
+            element: <DetailMyCourse />,
+          },
+          {
+            path: 'classroom/:id',
+            element: <Classroom />,
+          },
+          {
+            path: 'material/:id',
+            element: <Material />,
+          },
+          {
+            path: 'assignment/index/:id',
+            element: <Assignment />,
+          },
+          {
+            path: 'quizz/:id',
+            element: <Quizz />,
+          },
+          {
+            path: 'quizz/practics/:id',
+            element: <Practics />,
+          },
+          {
+            path: 'quizz/answer/:id',
+            element: <Answer />,
+          },
+          {
+            path: 'quizz/answer/detail/:id',
+            element: <DetailAnswer />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/auth/login',
+    element: <Login />,
+  },
+  {
+    path: '/auth/register/student',
+    element: <RegisterStudent />,
+  },
+  {
+    path: '/auth/register/teacher',
+    element: <RegisterTeacher />,
+  },
+  // Admin Auth Routes (without layout)
+  {
+    path: '/admin/login',
+    element: <AdminLogin />,
+  },
+  {
+    path: '/admin/forgot-password',
+    element: <AdminForgotPassword />,
+  },
+  // Admin Routes (with layout)
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    children: [
+      {
+        index: true,
+        element: <AdminDashboard />,
+      },
+      {
+        path: 'dashboard',
+        element: <AdminDashboard />,
+      },
+      {
+        path: 'courses',
+        element: <CourseManagement />,
+      },
+      {
+        path: 'teachers',
+        element: <TeacherManagement />,
+      },
+      {
+        path: 'employees',
+        element: <EmployeeManagement />,
+      },
+      {
+        path: 'recruitment',
+        element: <RecruitmentManagement />,
+      },
+      {
+        path: 'support',
+        element: <SupportManagement />,
+      },
+      {
+        path: 'permissions',
+        element: <PermissionManagement />,
+      },
+      {
+        path: 'revenue',
+        element: <RevenueManagement />,
+      },
+      {
+        path: 'profile',
+        element: <AdminProfile />,
+      },
+      {
+        path: 'settings',
+        element: <AdminProfile />,
+      },
+    ],
+  },
+  {
+    path: '*',
+    element: <div>404 Not Found</div>,
+  },
+]);
