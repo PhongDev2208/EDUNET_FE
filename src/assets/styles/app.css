@@ -1,0 +1,184 @@
+:root {
+  --primaryColor: #012643;
+  --primaryColor50: #EBF3FE;
+  --primaryColor300: #7CABF9;
+  --primaryColor100: #C2D8FC;
+  --primaryColor500: #3B82F6;
+  --primaryColor32: #c0d7fc;
+  --primaryColor600: #3676E0;
+  --primaryColor700: #2A5CAF;
+  --primaryColor900:  #098D94;
+  --secondColor: #FFFFFF;
+  --thirdColor: #D9D9D9;
+  --sematicColor:#1677FF;
+  --sematicSuccessColor: #389E0D;
+  --sematicSuccessColor500: #31A168;
+  --sematicPrimaryColor:#002C8C;
+  --sematicErrorColor: #D9363E;
+  --sematicErrorColor500: #FF5454;
+  --sematicWarningColor: #F5B40B;
+  --sematicWarningColorCus: #f1af07;
+  --sematicErrorColor600:  #F77138;
+  --sematicInfoColor: #0958D9;
+  --cyanColor: #006D75;
+  --textBlack: #000000;
+  --textBlack16: #00000029;
+  --textBlack2: #F5F5F5;
+  --textBlack4: #0000000A;
+  --textBlack3:#ebebeb;
+  --textBlack10:#e2e2e2;
+  --textBlack2: #00000005;
+  --textBlack8: #F0F0F0;
+  --textBlack12: #0000001F;
+  --textDescriptionRGB:rgba(137, 137, 137, 1);
+  --textBlack56: #707070;
+  --textBlack100:#012643;
+  --textBlack24: #0000003D;
+  --textBlack1E:#1E1E1E;
+  --textWhite: #FFFFFF;
+  --textWhite12:#FFFFFF1F;
+  --textGray: #898989;
+  --textGray700: #374151;
+  --textGray500: #6b7280;
+  --textGray50: rgba(137, 137, 137, 0.5);
+  --bgWhite50: #FFFFFF80;
+  --textWhite1:#D6DADD;
+  --bgGrey: #F4F5F7;
+  --textOpacity_8: rgba(32, 34, 49, 0.08);
+  --greyTextColor: #585858;
+  --bgGreyEy: #F4F5F7;
+  --bgGreyColor: #EDEDED;
+  --bgBlackOpacity : #0000000A;
+  --bgBlackOpacity5: #00000005;
+  --bgBlackOpacity10: #fafafa;
+  --bgRed50: #FFEEEE;
+  --bgGreyColor1:#bbbbbb;
+  --bgGreyColor2:#f4f5f7;
+  --bgGreyColor3:#eaebed;
+  --bgGreyColor4:#00192C0A;
+  --bgGreyColor5:#fbfbfb;
+  --bgGreyColor6:#f9fafa;
+  --bgBlack24: #BEBEBE;
+  --bgBlue : #F3FDFF;
+  --opacityTextColor: #00192C;
+  --opacityText100:#202231;
+  --opacityText56:#2022318F;
+  --textWhite8: #FFFFFF14;
+  --textBlack80Rgba: rgba(0, 0, 0, 0.8);
+  --textWhite56: #FFFFFF8F;
+  --textBlack56:#0000008F;
+  --textBlack56Rgba: rgba(0, 0, 0, 0.56);
+  --textPurple57 : #5D70D1;
+  --textPurple58 : #3ADDE5;
+  --textPurple59 : #4f46e5;
+  --textBlue57 : #23ACED;
+  --textBlue58 : #23BAED;
+  --textBlack8: #00000014;
+  --hoverColor: #012643CC;
+  --colorRed:#FF4D4F;
+  --colorRed1:#FF7875;
+  --blueColor1:#0B82DC;
+  --colorMain :linear-gradient(90deg, #17EAD9 0%, #6078EA 100%);
+  --colorSecond : linear-gradient(to right, #22d3ee, #2563eb);
+  --colorThird : linear-gradient(to right, #2563EB, #4F46E5);
+  --borderColor: #EBEBEB;
+  --dataColor: #2EBEAA;
+  --highlightColor: #ffc069;
+  --indigoColor500: #3F51B5;
+  --tealColor700: #218779;
+  --textOpacity4: #f6f6f7;
+  --keyColor1: rgba(1, 38, 67, 0.8);
+  --keyColor2: rgba(4, 70, 122, 1);
+  --keyColor3: rgba(1, 38, 67, 0.56);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-bottom: 0 !important;
+}
+.scrollbar-hide {
+  scrollbar-width: none; 
+  -ms-overflow-style: none;  
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar by default, show on hover */
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 8px;
+  display: none;
+}
+
+.scrollbar-hidden:hover {
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+}
+
+.scrollbar-hidden:hover::-webkit-scrollbar {
+  display: block;
+}
+
+.scrollbar-hidden::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.scrollbar-hidden::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.scrollbar-hidden::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(10deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}

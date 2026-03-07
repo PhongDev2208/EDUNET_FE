@@ -1,0 +1,214 @@
+// Course Management Hook — connected to real API
+import { useState, useCallback, useMemo } from 'react';
+import { message } from 'antd';
+import {
+  useGetCoursesQuery,
+  useGetReviewsQuery,
+  useUpdateCourseMutation,
+  useDeleteCourseMutation,
+  useDeleteReviewMutation,
+  useToggleReviewVisibilityMutation,
+} from '../services/courseApi';
+import type { Course, Review, QueryParams } from '../services/courseApi';
+
+interface Filters {
+  status?: string;
+  category?: string;
+  teacher?: string;
+  search?: string;
+}
+
+interface TableParams {
+  page: number;
+  pageSize: number;
+}
+
+export const useCourseManagement = () => {
+  const [filters, setFilters] = useState<Filters>({});
+  const [tableParams, setTableParams] = useState<TableParams>({
+    page: 1,
+    pageSize: 10,
+  });
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
+  // Build query params from filters
+  const courseQueryParams: QueryParams = useMemo(() => {
+    const filterParts: string[] = [];
+    if (filters.status) filterParts.push(`status:eq:${filters.status}`);
+    if (filters.category) filterParts.push(`categoryId:eq:${filters.category}`);
+    if (filters.teacher) filterParts.push(`teacherId:eq:${filters.teacher}`);
+    if (filters.search) filterParts.push(`title:like:${filters.search}`);
+
+    return {
+      page: tableParams.page,
+      size: tableParams.pageSize,
+      include: 'category|teacher',
+      ...(filterParts.length > 0 && { filter: filterParts.join('&&') }),
+      sort: 'createdAt:desc',
+    };
+  }, [filters, tableParams]);
+
+  // RTK Query hooks
+  const {
+    data: coursesData,
+    isLoading: isCoursesLoading,
+    refetch: refetchCourses,
+  } = useGetCoursesQuery(courseQueryParams);
+
+  const {
+    data: reviewsData,
+    refetch: refetchReviews,
+  } = useGetReviewsQuery({ size: 'unlimited', include: 'user|course' });
+
+  const [updateCourse] = useUpdateCourseMutation();
+  const [deleteCourseApi] = useDeleteCourseMutation();
+  const [deleteReviewApi] = useDeleteReviewMutation();
+  const [toggleVisibility] = useToggleReviewVisibilityMutation();
+
+  const courses = coursesData?.data?.rows || [];
+  const totalCourses = coursesData?.data?.count || 0;
+  const allReviews = reviewsData?.data?.rows || [];
+  const loading = isCoursesLoading;
+
+  // Get reviews for a specific course
+  const getReviewsForCourse = useCallback((courseId?: string) => {
+    if (courseId) {
+      return allReviews.filter(r => r.courseId === courseId);
+    }
+    return allReviews;
+  }, [allReviews]);
+
+  const [reviewCourseId, setReviewCourseId] = useState<string | undefined>();
+  const reviews = useMemo(() => getReviewsForCourse(reviewCourseId), [getReviewsForCourse, reviewCourseId]);
+
+  const fetchReviews = useCallback(async (courseId?: string) => {
+    setReviewCourseId(courseId);
+    refetchReviews();
+  }, [refetchReviews]);
+
+  const approveCourse = useCallback(async (courseId: string) => {
+    try {
+      await updateCourse({ id: courseId, data: { status: 'approved' } }).unwrap();
+      message.success('Đã duyệt khóa học');
+      return { success: true };
+    } catch {
+      message.error('Không thể duyệt khóa học');
+      return { success: false };
+    }
+  }, [updateCourse]);
+
+  const rejectCourse = useCallback(async (courseId: string, _reason: string) => {
+    try {
+      await updateCourse({ id: courseId, data: { status: 'rejected' } }).unwrap();
+      message.success('Đã từ chối khóa học');
+      return { success: true };
+    } catch {
+      message.error('Không thể từ chối khóa học');
+      return { success: false };
+    }
+  }, [updateCourse]);
+
+  const publishCourse = useCallback(async (courseId: string) => {
+    try {
+      await updateCourse({ id: courseId, data: { status: 'published' } }).unwrap();
+      message.success('Đã xuất bản khóa học');
+      return { success: true };
+    } catch {
+      message.error('Không thể xuất bản khóa học');
+      return { success: false };
+    }
+  }, [updateCourse]);
+
+  const toggleCourseLock = useCallback(async (courseId: string) => {
+    try {
+      const course = courses.find(c => c.id === courseId);
+      const newStatus = course?.status === 'archived' ? 'published' : 'archived';
+      await updateCourse({ id: courseId, data: { status: newStatus } }).unwrap();
+      message.success('Đã cập nhật trạng thái khóa học');
+      return { success: true };
+    } catch {
+      message.error('Không thể cập nhật trạng thái');
+      return { success: false };
+    }
+  }, [updateCourse, courses]);
+
+  const deleteCourse = useCallback(async (courseId: string) => {
+    try {
+      await deleteCourseApi(courseId).unwrap();
+      message.success('Đã xóa khóa học');
+      return { success: true };
+    } catch {
+      message.error('Không thể xóa khóa học');
+      return { success: false };
+    }
+  }, [deleteCourseApi]);
+
+  const hideReview = useCallback(async (reviewId: string) => {
+    try {
+      await toggleVisibility(reviewId).unwrap();
+      message.success('Đã ẩn đánh giá');
+      return { success: true };
+    } catch {
+      message.error('Không thể ẩn đánh giá');
+      return { success: false };
+    }
+  }, [toggleVisibility]);
+
+  const showReview = useCallback(async (reviewId: string) => {
+    try {
+      await toggleVisibility(reviewId).unwrap();
+      message.success('Đã hiển thị lại đánh giá');
+      return { success: true };
+    } catch {
+      message.error('Không thể hiển thị đánh giá');
+      return { success: false };
+    }
+  }, [toggleVisibility]);
+
+  const deleteReview = useCallback(async (reviewId: string) => {
+    try {
+      await deleteReviewApi(reviewId).unwrap();
+      message.success('Đã xóa đánh giá');
+      return { success: true };
+    } catch {
+      message.error('Không thể xóa đánh giá');
+      return { success: false };
+    }
+  }, [deleteReviewApi]);
+
+  const statistics = useMemo(() => ({
+    total: totalCourses,
+    published: courses.filter(c => c.status === 'published').length,
+    pending: courses.filter(c => c.status === 'pending').length,
+    rejected: courses.filter(c => c.status === 'rejected').length,
+    archived: courses.filter(c => c.status === 'archived').length,
+    totalRevenue: 0,
+    totalStudents: courses.reduce((sum, c) => sum + (c.totalStudents || 0), 0),
+    flaggedReviews: allReviews.filter(r => r.isVisible === false).length,
+  }), [courses, totalCourses, allReviews]);
+
+  return {
+    courses,
+    allCourses: courses,
+    reviews,
+    loading,
+    selectedCourse,
+    setSelectedCourse,
+    filters,
+    setFilters,
+    tableParams,
+    setTableParams,
+    statistics,
+    total: totalCourses,
+    fetchCourses: refetchCourses,
+    fetchReviews,
+    approveCourse,
+    rejectCourse,
+    publishCourse,
+    toggleCourseLock,
+    deleteCourse,
+    hideReview,
+    showReview,
+    deleteReview,
+  };
+};
