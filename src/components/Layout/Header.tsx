@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   MailOutlined, 
   FacebookFilled, 
@@ -9,16 +9,27 @@ import {
   UserOutlined,
   LogoutOutlined,
   MenuOutlined,
-  PlusOutlined
+  PlusOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
-import { Button, Drawer } from 'antd';
+import { Avatar, Button, Drawer, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
+import { useGetProfileQuery } from '../../services/authApi';
+import { getAccessToken, clearTokens } from '../../services/axiosBaseQuery';
+import { useLogoutMutation } from '../../services/authApi';
 
 import Logo from '../../assets/images/Logo.png';
 
 const Header: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoggedIn] = useState(false); // Mock login state
+  
+  const hasToken = !!getAccessToken();
+  const { data: profileData } = useGetProfileQuery(undefined, { skip: !hasToken });
+  const [logoutMutation] = useLogoutMutation();
+  const user = profileData?.data || null;
+  const isLoggedIn = !!user;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -28,6 +39,40 @@ const Header: React.FC = () => {
     { title: 'MyCourse', path: '/my-course' },
     { title: 'Schedule', path: '/schedule' },
     { title: 'Chats', path: '/chat' },
+  ];
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation().unwrap();
+    } catch {
+      // Ignore logout errors
+    } finally {
+      clearTokens();
+      navigate('/auth/login');
+    }
+  };
+
+  const userMenuItems: MenuProps['items'] = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Hồ sơ cá nhân',
+      onClick: () => navigate('/profile'),
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: 'Cài đặt',
+      onClick: () => navigate('/profile'),
+    },
+    { type: 'divider' },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Đăng xuất',
+      danger: true,
+      onClick: handleLogout,
+    },
   ];
 
   const SocialLink = ({ href, icon }: { href: string; icon: React.ReactNode }) => (
@@ -94,12 +139,24 @@ const Header: React.FC = () => {
             {/* Auth Button */}
             <div className="hidden lg:block">
               {isLoggedIn ? (
-                <Link to="/auth/logout" className="flex items-center gap-2 text-[#30C2EC] font-medium hover:opacity-80">
-                  <div className="w-8 h-8 rounded-full bg-[#30C2EC] flex items-center justify-center text-white">
-                    <LogoutOutlined />
+                <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
+                  <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+                    <Avatar 
+                      src={user?.avatar} 
+                      icon={<UserOutlined />}
+                      size={36}
+                      className="!bg-[#30C2EC]"
+                    />
+                    <div className="hidden xl:block">
+                      <div className="text-sm font-medium text-[#012643] leading-tight">
+                        {user?.firstName} {user?.lastName}
+                      </div>
+                      <div className="text-xs text-gray-400 leading-tight">
+                        {user?.role === 'student' ? 'Học viên' : user?.role === 'teacher' ? 'Giảng viên' : 'Admin'}
+                      </div>
+                    </div>
                   </div>
-                  <span>Logout</span>
-                </Link>
+                </Dropdown>
               ) : (
                 <Link to="/auth/login" className="flex items-center gap-2 text-[#30C2EC] font-medium hover:opacity-80">
                   <div className="w-8 h-8 rounded-full bg-[#30C2EC] flex items-center justify-center text-white">
@@ -143,16 +200,48 @@ const Header: React.FC = () => {
             </Link>
           ))}
           <div className="mt-4">
-            <Link 
-              to="/auth/login" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 text-[#30C2EC] font-medium"
-            >
-              <div className="w-8 h-8 rounded-full bg-[#30C2EC] flex items-center justify-center text-white">
-                <UserOutlined />
+            {isLoggedIn ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                  <Avatar 
+                    src={user?.avatar} 
+                    icon={<UserOutlined />} 
+                    size={40}
+                    className="!bg-[#30C2EC]"
+                  />
+                  <div>
+                    <div className="font-medium text-[#012643]">{user?.firstName} {user?.lastName}</div>
+                    <div className="text-xs text-gray-400">{user?.email}</div>
+                  </div>
+                </div>
+                <Link 
+                  to="/profile" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-gray-600 font-medium py-2"
+                >
+                  <UserOutlined />
+                  <span>Hồ sơ cá nhân</span>
+                </Link>
+                <button 
+                  onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+                  className="flex items-center gap-2 text-red-500 font-medium py-2 w-full text-left"
+                >
+                  <LogoutOutlined />
+                  <span>Đăng xuất</span>
+                </button>
               </div>
-              <span>Login</span>
-            </Link>
+            ) : (
+              <Link 
+                to="/auth/login" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 text-[#30C2EC] font-medium"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#30C2EC] flex items-center justify-center text-white">
+                  <UserOutlined />
+                </div>
+                <span>Login</span>
+              </Link>
+            )}
           </div>
         </div>
       </Drawer>

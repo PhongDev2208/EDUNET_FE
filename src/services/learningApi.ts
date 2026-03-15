@@ -60,6 +60,7 @@ export interface QuizAttempt {
   startedAt: string;
   completedAt?: string;
   timeSpent: number;
+  quiz?: Quiz;
 }
 
 // Schedule Types
@@ -108,6 +109,23 @@ export const learningApi = createApi({
       providesTags: (_result, _error, id) => [{ type: 'Materials', id }],
     }),
 
+    createMaterial: builder.mutation<ApiResponse<Material>, Partial<Material> & { courseId: string; title: string; downloadUrl: string }>({
+      query: (data) => ({
+        url: '/materials',
+        method: 'post',
+        data,
+      }),
+      invalidatesTags: ['Materials'],
+    }),
+
+    deleteMaterial: builder.mutation<ApiResponse<null>, string>({
+      query: (id) => ({
+        url: `/materials/${id}`,
+        method: 'delete',
+      }),
+      invalidatesTags: ['Materials'],
+    }),
+
     // ============ ASSIGNMENTS ============
     getAssignmentsByCourse: builder.query<ApiResponse<Assignment[]>, string>({
       query: (courseId) => ({
@@ -142,6 +160,32 @@ export const learningApi = createApi({
       invalidatesTags: ['Assignments'],
     }),
 
+    createAssignment: builder.mutation<ApiResponse<Assignment>, Partial<Assignment> & { courseId: string; title: string; dueDate: string }>({
+      query: (data) => ({
+        url: '/assignments',
+        method: 'post',
+        data,
+      }),
+      invalidatesTags: ['Assignments'],
+    }),
+
+    updateAssignment: builder.mutation<ApiResponse<Assignment>, { id: string; data: Partial<Assignment> }>({
+      query: ({ id, data }) => ({
+        url: `/assignments/${id}`,
+        method: 'patch',
+        data,
+      }),
+      invalidatesTags: ['Assignments'],
+    }),
+
+    deleteAssignment: builder.mutation<ApiResponse<null>, string>({
+      query: (id) => ({
+        url: `/assignments/${id}`,
+        method: 'delete',
+      }),
+      invalidatesTags: ['Assignments'],
+    }),
+
     // ============ QUIZZES ============
     getQuizzesByCourse: builder.query<ApiResponse<Quiz[]>, string>({
       query: (courseId) => ({
@@ -157,6 +201,32 @@ export const learningApi = createApi({
         method: 'get',
       }),
       providesTags: (_result, _error, id) => [{ type: 'Quizzes', id }],
+    }),
+
+    createQuiz: builder.mutation<ApiResponse<Quiz>, Partial<Quiz> & { courseId: string; title: string }>({
+      query: (data) => ({
+        url: '/quizzes',
+        method: 'post',
+        data,
+      }),
+      invalidatesTags: ['Quizzes'],
+    }),
+
+    updateQuiz: builder.mutation<ApiResponse<Quiz>, { id: string; data: Partial<Quiz> }>({
+      query: ({ id, data }) => ({
+        url: `/quizzes/${id}`,
+        method: 'patch',
+        data,
+      }),
+      invalidatesTags: ['Quizzes'],
+    }),
+
+    deleteQuiz: builder.mutation<ApiResponse<null>, string>({
+      query: (id) => ({
+        url: `/quizzes/${id}`,
+        method: 'delete',
+      }),
+      invalidatesTags: ['Quizzes'],
     }),
 
     startQuizAttempt: builder.mutation<ApiResponse<QuizAttempt>, string>({
@@ -185,6 +255,14 @@ export const learningApi = createApi({
         method: 'get',
       }),
       providesTags: ['QuizAttempts'],
+    }),
+
+    getQuizAttemptById: builder.query<ApiResponse<QuizAttempt>, string>({
+      query: (attemptId) => ({
+        url: `/quizzes/attempts/${attemptId}`,
+        method: 'get',
+      }),
+      providesTags: (_result, _error, id) => [{ type: 'QuizAttempts', id }],
     }),
 
     getQuizBestScore: builder.query<ApiResponse<{ bestScore: number }>, string>({
@@ -237,17 +315,26 @@ export const {
   // Materials
   useGetMaterialsByCourseQuery,
   useGetMaterialByIdQuery,
+  useCreateMaterialMutation,
+  useDeleteMaterialMutation,
   // Assignments
   useGetAssignmentsByCourseQuery,
   useGetMyAssignmentsQuery,
   useGetAssignmentByIdQuery,
   useSubmitAssignmentMutation,
+  useCreateAssignmentMutation,
+  useUpdateAssignmentMutation,
+  useDeleteAssignmentMutation,
   // Quizzes
   useGetQuizzesByCourseQuery,
   useGetQuizByIdQuery,
+  useCreateQuizMutation,
+  useUpdateQuizMutation,
+  useDeleteQuizMutation,
   useStartQuizAttemptMutation,
   useSubmitQuizAttemptMutation,
   useGetQuizAttemptsQuery,
+  useGetQuizAttemptByIdQuery,
   useGetQuizBestScoreQuery,
   // Schedules
   useGetSchedulesQuery,

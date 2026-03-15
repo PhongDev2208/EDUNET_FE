@@ -53,13 +53,14 @@ const Material: React.FC = () => {
     filterType,
     setFilterType,
     isModalOpen,
+    isLoading,
     stats,
     getTypeConfig,
     handleUpload,
     handleDelete,
     handleSubmit,
     closeModal,
-  } = useMaterial();
+  } = useMaterial(id!);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -177,10 +178,10 @@ const Material: React.FC = () => {
         <Breadcrumb 
           className="mb-6"
           items={[
-            { title: <Link to="/"><HomeOutlined /> Home</Link> },
-            { title: <Link to="/my-course">My Courses</Link> },
-            { title: <Link to={`/my-course/detail/${id}`}>Course Detail</Link> },
-            { title: 'Materials' },
+            { title: <Link to="/"><HomeOutlined /> Trang chủ</Link> },
+            { title: <Link to="/my-course">Khóa học của tôi</Link> },
+            { title: <Link to={`/my-course/detail/${id}`}>Chi tiết khóa học</Link> },
+            { title: 'Tài liệu' },
           ]}
         />
 
@@ -189,10 +190,10 @@ const Material: React.FC = () => {
           <div>
             <Title level={2} className="!text-[#012643] !mb-1 flex items-center gap-3">
               <BookOutlined className="text-cyan-500" />
-              Course Materials
+              Tài liệu khóa học
             </Title>
             <Text className="text-gray-500">
-              {userRole === 'teacher' ? 'Upload and manage course resources' : 'Download course resources'}
+              {userRole === 'teacher' ? 'Tải lên và quản lý tài liệu' : 'Tải xuống tài liệu khóa học'}
             </Text>
           </div>
           {userRole === 'teacher' && (
@@ -202,7 +203,7 @@ const Material: React.FC = () => {
               onClick={onUpload}
               className="!bg-[#012643] !border-[#012643] !rounded-lg"
             >
-              Upload Material
+              Tải lên tài liệu
             </Button>
           )}
         </div>
@@ -213,7 +214,7 @@ const Material: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#012643]">{stats.total}</div>
-                <div className="text-gray-500 text-sm">Total Files</div>
+                <div className="text-gray-500 text-sm">Tổng tệp</div>
               </div>
             </Card>
           </Col>
@@ -221,7 +222,7 @@ const Material: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-500">{stats.pdf}</div>
-                <div className="text-gray-500 text-sm">PDFs</div>
+                <div className="text-gray-500 text-sm">PDF</div>
               </div>
             </Card>
           </Col>
@@ -237,7 +238,7 @@ const Material: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-500">{stats.document}</div>
-                <div className="text-gray-500 text-sm">Documents</div>
+                <div className="text-gray-500 text-sm">Tài liệu</div>
               </div>
             </Card>
           </Col>
@@ -247,7 +248,7 @@ const Material: React.FC = () => {
         <Card className="rounded-2xl border-0 shadow-md">
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <Input
-              placeholder="Search materials..."
+              placeholder="Tìm tài liệu..."
               prefix={<SearchOutlined className="text-gray-400" />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -259,7 +260,7 @@ const Material: React.FC = () => {
               onChange={setFilterType}
               className="sm:!w-40"
               options={[
-                { value: 'all', label: 'All Types' },
+                { value: 'all', label: 'Tất cả loại' },
                 { value: 'pdf', label: 'PDF' },
                 { value: 'video', label: 'Video' },
                 { value: 'document', label: 'Document' },
@@ -270,12 +271,13 @@ const Material: React.FC = () => {
           </div>
 
           {filteredMaterials.length === 0 ? (
-            <Empty description="No materials found" />
+            <Empty description="Không tìm thấy tài liệu" />
           ) : (
             <Table
               columns={columns}
               dataSource={filteredMaterials}
               rowKey="id"
+              loading={isLoading}
               pagination={{ pageSize: 10 }}
               className="custom-table"
             />
@@ -284,7 +286,7 @@ const Material: React.FC = () => {
 
         {/* Upload Modal */}
         <Modal
-          title="Upload New Material"
+          title="Tải lên tài liệu mới"
           open={isModalOpen}
           onCancel={closeModal}
           footer={null}
@@ -293,33 +295,33 @@ const Material: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={onSubmit}>
             <Form.Item
               name="title"
-              label="Title"
-              rules={[{ required: true, message: 'Please enter title' }]}
+              label="Tiêu đề"
+              rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
             >
-              <Input placeholder="Material title" />
+              <Input placeholder="Tiêu đề tài liệu" />
             </Form.Item>
 
             <Form.Item
               name="description"
-              label="Description"
+              label="Mô tả"
             >
-              <TextArea rows={2} placeholder="Brief description..." />
+              <TextArea rows={2} placeholder="Mô tả ngắn..." />
             </Form.Item>
 
             <Form.Item
               name="type"
-              label="Material Type"
-              rules={[{ required: true, message: 'Please select type' }]}
+              label="Loại tài liệu"
+              rules={[{ required: true, message: 'Vui lòng chọn loại' }]}
             >
               <Select
                 options={[
-                  { value: 'pdf', label: 'PDF Document' },
+                  { value: 'pdf', label: 'Tài liệu PDF' },
                   { value: 'video', label: 'Video' },
                   { value: 'document', label: 'Word/Doc' },
-                  { value: 'link', label: 'External Link' },
-                  { value: 'image', label: 'Image' },
+                  { value: 'link', label: 'Liên kết ngoài' },
+                  { value: 'image', label: 'Hình ảnh' },
                 ]}
-                placeholder="Select type"
+                placeholder="Chọn loại"
               />
             </Form.Item>
 
@@ -331,8 +333,8 @@ const Material: React.FC = () => {
                 getFieldValue('type') === 'link' ? (
                   <Form.Item
                     name="downloadUrl"
-                    label="URL"
-                    rules={[{ required: true, message: 'Please enter URL' }]}
+                    label="Đường dẫn"
+                    rules={[{ required: true, message: 'Vui lòng nhập URL' }]}
                   >
                     <Input placeholder="https://example.com/resource" />
                   </Form.Item>
@@ -351,9 +353,9 @@ const Material: React.FC = () => {
             </Form.Item>
 
             <div className="flex justify-end gap-3 mt-6">
-              <Button onClick={closeModal}>Cancel</Button>
+              <Button onClick={closeModal}>Hủy</Button>
               <Button type="primary" htmlType="submit" className="!bg-[#012643]">
-                Upload
+                Tải lên
               </Button>
             </div>
           </Form>

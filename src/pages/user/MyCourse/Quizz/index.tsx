@@ -13,7 +13,8 @@ import {
   Row,
   Col,
   Empty,
-  Progress
+  Progress,
+  Spin
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -51,6 +52,7 @@ const Quizz: React.FC = () => {
     isModalOpen,
     selectedQuiz,
     stats,
+    isLoading,
     getStatusConfig,
     handleCreate,
     handleEdit,
@@ -58,7 +60,7 @@ const Quizz: React.FC = () => {
     handleSubmit,
     handleStartQuiz,
     closeModal,
-  } = useQuiz();
+  } = useQuiz(id!);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -91,10 +93,10 @@ const Quizz: React.FC = () => {
         <Breadcrumb 
           className="mb-6"
           items={[
-            { title: <Link to="/"><HomeOutlined /> Home</Link> },
-            { title: <Link to="/my-course">My Courses</Link> },
-            { title: <Link to={`/my-course/detail/${id}`}>Course Detail</Link> },
-            { title: 'Quizzes' },
+            { title: <Link to="/"><HomeOutlined /> Trang chủ</Link> },
+            { title: <Link to="/my-course">Khóa học của tôi</Link> },
+            { title: <Link to={`/my-course/detail/${id}`}>Chi tiết khóa học</Link> },
+            { title: 'Bài kiểm tra' },
           ]}
         />
 
@@ -103,10 +105,10 @@ const Quizz: React.FC = () => {
           <div>
             <Title level={2} className="!text-[#012643] !mb-1 flex items-center gap-3">
               <ReadOutlined className="text-green-500" />
-              Quizzes
+              Bài kiểm tra
             </Title>
             <Text className="text-gray-500">
-              {userRole === 'teacher' ? 'Create and manage course quizzes' : 'Test your knowledge with quizzes'}
+              {userRole === 'teacher' ? 'Tạo và quản lý bài kiểm tra khóa học' : 'Kiểm tra kiến thức với các bài kiểm tra'}
             </Text>
           </div>
           {userRole === 'teacher' && (
@@ -116,7 +118,7 @@ const Quizz: React.FC = () => {
               onClick={onCreate}
               className="!bg-[#012643] !border-[#012643] !rounded-lg"
             >
-              Create Quiz
+              Tạo bài kiểm tra
             </Button>
           )}
         </div>
@@ -127,7 +129,7 @@ const Quizz: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#012643]">{stats.total}</div>
-                <div className="text-gray-500 text-sm">Total Quizzes</div>
+                <div className="text-gray-500 text-sm">Tổng bài kiểm tra</div>
               </div>
             </Card>
           </Col>
@@ -135,7 +137,7 @@ const Quizz: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
-                <div className="text-gray-500 text-sm">Completed</div>
+                <div className="text-gray-500 text-sm">Hoàn thành</div>
               </div>
             </Card>
           </Col>
@@ -143,7 +145,7 @@ const Quizz: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-400">{stats.notStarted}</div>
-                <div className="text-gray-500 text-sm">Not Started</div>
+                <div className="text-gray-500 text-sm">Chưa bắt đầu</div>
               </div>
             </Card>
           </Col>
@@ -151,7 +153,7 @@ const Quizz: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-r from-yellow-50 to-orange-50">
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-500">{stats.avgScore}%</div>
-                <div className="text-gray-500 text-sm">Avg Score</div>
+                <div className="text-gray-500 text-sm">Điểm TB</div>
               </div>
             </Card>
           </Col>
@@ -161,7 +163,7 @@ const Quizz: React.FC = () => {
         <Card className="rounded-2xl border-0 shadow-md mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
-              placeholder="Search quizzes..."
+              placeholder="Tìm kiếm bài kiểm tra..."
               prefix={<SearchOutlined className="text-gray-400" />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -173,19 +175,20 @@ const Quizz: React.FC = () => {
               onChange={setFilterStatus}
               className="sm:!w-40"
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'in-progress', label: 'In Progress' },
-                { value: 'not-started', label: 'Not Started' },
+                { value: 'all', label: 'Tất cả' },
+                { value: 'completed', label: 'Hoàn thành' },
+                { value: 'in-progress', label: 'Đang làm' },
+                { value: 'not-started', label: 'Chưa bắt đầu' },
               ]}
             />
           </div>
         </Card>
 
         {/* Quiz Grid */}
+        <Spin spinning={isLoading}>
         {filteredQuizzes.length === 0 ? (
           <Card className="rounded-2xl border-0 shadow-md">
-            <Empty description="No quizzes found" />
+            <Empty description="Không tìm thấy bài kiểm tra" />
           </Card>
         ) : (
           <Row gutter={[20, 20]}>
@@ -217,15 +220,15 @@ const Quizz: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="flex items-center gap-2 text-gray-600">
                           <QuestionCircleOutlined className="text-blue-500" />
-                          <span>{quiz.questions} Questions</span>
+                          <span>{quiz.questions} Câu hỏi</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
                           <ClockCircleOutlined className="text-orange-500" />
-                          <span>{quiz.duration} mins</span>
+                          <span>{quiz.duration} phút</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
                           <HistoryOutlined className="text-purple-500" />
-                          <span>{quiz.attempts}/{quiz.maxAttempts} Attempts</span>
+                          <span>{quiz.attempts}/{quiz.maxAttempts} Lượt</span>
                         </div>
                         {quiz.bestScore !== undefined && (
                           <div className="flex items-center gap-2 text-gray-600">
@@ -239,7 +242,7 @@ const Quizz: React.FC = () => {
                       {quiz.bestScore !== undefined && (
                         <div className="mb-4">
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-500">Best Score</span>
+                            <span className="text-gray-500">Điểm cao nhất</span>
                             <span className="font-semibold text-green-500">{quiz.bestScore}%</span>
                           </div>
                           <Progress 
@@ -265,7 +268,7 @@ const Quizz: React.FC = () => {
                               <>
                                 <Link to={`/my-course/quizz/answer/${quiz.id}`} className="flex-1">
                                   <Button block icon={<BarChartOutlined />} className="!rounded-lg">
-                                    View Results
+                                    Xem kết quả
                                   </Button>
                                 </Link>
                                 {quiz.attempts < quiz.maxAttempts && (
@@ -275,7 +278,7 @@ const Quizz: React.FC = () => {
                                     onClick={() => handleStartQuiz(quiz)}
                                     className="!bg-[#012643] !rounded-lg"
                                   >
-                                    Retry
+                                    Làm lại
                                   </Button>
                                 )}
                               </>
@@ -288,7 +291,7 @@ const Quizz: React.FC = () => {
                                 className="!bg-[#012643] !rounded-lg"
                                 disabled={quiz.attempts >= quiz.maxAttempts}
                               >
-                                {quiz.attempts > 0 ? 'Continue Quiz' : 'Start Quiz'}
+                                {quiz.attempts > 0 ? 'Tiếp tục' : 'Bắt đầu làm bài'}
                               </Button>
                             )}
                           </>
@@ -299,16 +302,16 @@ const Quizz: React.FC = () => {
                               onClick={() => onEdit(quiz)}
                               className="!rounded-lg flex-1"
                             >
-                              Edit
+                              Sửa
                             </Button>
                             <Button 
                               icon={<BarChartOutlined />}
                               className="!rounded-lg"
                             >
-                              Stats
+                              Thống kê
                             </Button>
                             <Popconfirm
-                              title="Delete this quiz?"
+                              title="Xóa bài kiểm tra này?"
                               onConfirm={() => handleDelete(quiz.id)}
                             >
                               <Button 
@@ -327,10 +330,11 @@ const Quizz: React.FC = () => {
             })}
           </Row>
         )}
+        </Spin>
 
         {/* Create/Edit Modal */}
         <Modal
-          title={selectedQuiz ? 'Edit Quiz' : 'Create New Quiz'}
+          title={selectedQuiz ? 'Sửa bài kiểm tra' : 'Tạo bài kiểm tra mới'}
           open={isModalOpen}
           onCancel={closeModal}
           footer={null}
@@ -339,34 +343,34 @@ const Quizz: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={onSubmit}>
             <Form.Item
               name="title"
-              label="Quiz Title"
-              rules={[{ required: true, message: 'Please enter title' }]}
+              label="Tiêu đề"
+              rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
             >
-              <Input placeholder="Enter quiz title" />
+              <Input placeholder="Nhập tiêu đề bài kiểm tra" />
             </Form.Item>
 
             <Form.Item
               name="description"
-              label="Description"
+              label="Mô tả"
             >
-              <TextArea rows={3} placeholder="Brief description of the quiz..." />
+              <TextArea rows={3} placeholder="Mô tả ngắn về bài kiểm tra..." />
             </Form.Item>
 
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   name="duration"
-                  label="Duration (minutes)"
-                  rules={[{ required: true, message: 'Please enter duration' }]}
+                  label="Thời gian (phút)"
+                  rules={[{ required: true, message: 'Vui lòng nhập thời gian' }]}
                 >
                   <Input type="number" placeholder="30" />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
-                  name="questions"
-                  label="Number of Questions"
-                  rules={[{ required: true, message: 'Please enter number' }]}
+                  name="totalQuestions"
+                  label="Số câu hỏi"
+                  rules={[{ required: true, message: 'Vui lòng nhập số câu hỏi' }]}
                 >
                   <Input type="number" placeholder="20" />
                 </Form.Item>
@@ -377,8 +381,8 @@ const Quizz: React.FC = () => {
               <Col span={12}>
                 <Form.Item
                   name="maxAttempts"
-                  label="Max Attempts"
-                  rules={[{ required: true, message: 'Please enter max attempts' }]}
+                  label="Số lượt tối đa"
+                  rules={[{ required: true, message: 'Vui lòng nhập số lượt tối đa' }]}
                 >
                   <Input type="number" placeholder="3" />
                 </Form.Item>
@@ -386,7 +390,7 @@ const Quizz: React.FC = () => {
               <Col span={12}>
                 <Form.Item
                   name="dueDate"
-                  label="Due Date (optional)"
+                  label="Hạn nộp (tùy chọn)"
                 >
                   <Input type="date" />
                 </Form.Item>
@@ -394,9 +398,9 @@ const Quizz: React.FC = () => {
             </Row>
 
             <div className="flex justify-end gap-3 mt-6">
-              <Button onClick={closeModal}>Cancel</Button>
+              <Button onClick={closeModal}>Hủy</Button>
               <Button type="primary" htmlType="submit" className="!bg-[#012643]">
-                {selectedQuiz ? 'Update Quiz' : 'Create Quiz'}
+                {selectedQuiz ? 'Cập nhật' : 'Tạo mới'}
               </Button>
             </div>
           </Form>

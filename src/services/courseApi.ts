@@ -313,6 +313,43 @@ export const courseApi = createApi({
       providesTags: ['Enrollments'],
     }),
 
+    /** Get current user's enrollments with full course details */
+    getMyEnrollments: builder.query<ApiResponse<Enrollment[]>, void>({
+      query: () => ({
+        url: '/enrollments/my-enrollments',
+        method: 'get',
+      }),
+      providesTags: ['Enrollments'],
+    }),
+
+    /** Get all enrollments for a course (with user details) - for classroom */
+    getEnrollmentsByCourse: builder.query<ApiResponse<Enrollment[]>, string>({
+      query: (courseId) => ({
+        url: `/enrollments/course/${courseId}`,
+        method: 'get',
+      }),
+      providesTags: (_result, _error, courseId) => [{ type: 'Enrollments', id: `course-${courseId}` }],
+    }),
+
+    /** Check if current user is enrolled in a course */
+    checkEnrollment: builder.query<ApiResponse<{ enrolled: boolean; enrollment: Enrollment | null }>, string>({
+      query: (courseId) => ({
+        url: `/enrollments/check/${courseId}`,
+        method: 'get',
+      }),
+      providesTags: (_result, _error, courseId) => [{ type: 'Enrollments', id: courseId }],
+    }),
+
+    /** Enroll the current user in a course */
+    enrollMe: builder.mutation<ApiResponse<Enrollment>, string>({
+      query: (courseId) => ({
+        url: '/enrollments/enroll',
+        method: 'post',
+        data: { courseId },
+      }),
+      invalidatesTags: ['Enrollments', 'Courses'],
+    }),
+
     enrollCourse: builder.mutation<ApiResponse<Enrollment>, { courseId: string; userId: string }>({
       query: (data) => ({
         url: '/enrollments',
@@ -327,6 +364,15 @@ export const courseApi = createApi({
         url: `/enrollments/${id}`,
         method: 'patch',
         data,
+      }),
+      invalidatesTags: ['Enrollments'],
+    }),
+
+    updateEnrollmentProgress: builder.mutation<ApiResponse<Enrollment>, { id: string; progress: number }>({
+      query: ({ id, progress }) => ({
+        url: `/enrollments/${id}/progress`,
+        method: 'patch',
+        data: { progress },
       }),
       invalidatesTags: ['Enrollments'],
     }),
@@ -418,8 +464,13 @@ export const {
   // Enrollments
   useGetEnrollmentsQuery,
   useGetUserEnrollmentsQuery,
+  useGetMyEnrollmentsQuery,
+  useGetEnrollmentsByCourseQuery,
+  useCheckEnrollmentQuery,
+  useEnrollMeMutation,
   useEnrollCourseMutation,
   useUpdateEnrollmentMutation,
+  useUpdateEnrollmentProgressMutation,
   // Reviews
   useGetReviewsQuery,
   useGetReviewsByCourseQuery,

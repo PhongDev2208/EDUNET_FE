@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Button, Image, Tag, Modal, Form, Input, Select, message, Tooltip, Typography, Avatar } from 'antd';
-import { ClockCircleOutlined, CalendarOutlined, FacebookOutlined, TwitterOutlined, YoutubeOutlined, InstagramOutlined, FlagOutlined, HeartOutlined, HeartFilled, ShareAltOutlined, SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Button, Image, Tag, Modal, Form, Input, Select, message, Tooltip, Typography, Avatar, Spin } from 'antd';
+import { ClockCircleOutlined, CalendarOutlined, FacebookOutlined, TwitterOutlined, YoutubeOutlined, InstagramOutlined, FlagOutlined, HeartOutlined, HeartFilled, ShareAltOutlined, SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined, BookOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../../utils/format';
+import { useCheckEnrollmentQuery, useEnrollMeMutation } from '../../services/courseApi';
+import { getAccessToken } from '../../services/axiosBaseQuery';
 import type { Course } from '../../models/course';
 
 const { TextArea } = Input;
@@ -12,30 +15,60 @@ interface CourseSidebarProps {
 }
 
 const COURSE_REPORT_REASONS = [
-  'Misleading course content',
-  'Inappropriate content',
-  'Copyright violation',
-  'Poor quality or outdated',
-  'Instructor not responding',
-  'Technical issues',
-  'Other',
+  'Nội dung khóa học gây hiểu lầm',
+  'Nội dung không phù hợp',
+  'Vi phạm bản quyền',
+  'Chất lượng kém hoặc lỗi thời',
+  'Giảng viên không phản hồi',
+  'Lỗi kỹ thuật',
+  'Khác',
 ];
 
 const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
+  const navigate = useNavigate();
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportForm] = Form.useForm();
   const [isWishlisted, setIsWishlisted] = useState(false);
 
+  const isLoggedIn = !!getAccessToken();
+  const courseId = String(course.id);
+
+  const { data: enrollmentCheck, isLoading: isCheckingEnrollment } = useCheckEnrollmentQuery(courseId, {
+    skip: !isLoggedIn || !courseId,
+  });
+  const [enrollMe, { isLoading: isEnrolling }] = useEnrollMeMutation();
+
+  const isEnrolled = enrollmentCheck?.data?.enrolled ?? false;
+
+  const handleEnroll = async () => {
+    if (!isLoggedIn) {
+      message.info('Vui lòng đăng nhập để đăng ký khóa học');
+      navigate('/auth/login');
+      return;
+    }
+    try {
+      await enrollMe(courseId).unwrap();
+      message.success('Đăng ký khóa học thành công!');
+    } catch (err: any) {
+      const msg = err?.data?.message || 'Đăng ký khóa học thất bại';
+      message.error(msg);
+    }
+  };
+
+  const handleGoToCourse = () => {
+    navigate(`/my-course/detail/${courseId}`);
+  };
+
   const handleReportCourse = (values: any) => {
     console.log('Course report submitted:', values);
-    message.success('Report submitted successfully. We will review it shortly.');
+    message.success('Báo cáo đã được gửi. Chúng tôi sẽ xem xét trong thời gian sớm nhất.');
     setReportModalOpen(false);
     reportForm.resetFields();
   };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    message.success('Link copied to clipboard!');
+    message.success('Đã sao chép liên kết!');
   };
 
   return (
@@ -48,18 +81,16 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
           className="w-full h-48 object-cover"
         />
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-          <Button 
-            type="primary" 
-            shape="round" 
+            <Button type="primary" shape="round" 
             className="opacity-0 group-hover:opacity-100 transition-opacity !bg-white !text-[#012643] !border-none"
           >
-            Preview Course
+            Xem trước
           </Button>
         </div>
         
         {/* Wishlist & Share Buttons */}
         <div className="absolute top-3 right-3 flex gap-2">
-          <Tooltip title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
+          <Tooltip title={isWishlisted ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}>
             <Button 
               shape="circle" 
               icon={isWishlisted ? <HeartFilled className="text-red-500" /> : <HeartOutlined />}
@@ -67,7 +98,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
               className="!bg-white/90 hover:!bg-white !border-none shadow-md"
             />
           </Tooltip>
-          <Tooltip title="Share">
+          <Tooltip title="Chia sẻ">
             <Button 
               shape="circle" 
               icon={<ShareAltOutlined />}
@@ -97,52 +128,70 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
 
       {/* CTA Buttons */}
       <div className="space-y-3 mb-6">
-        <Button 
-          type="primary" 
-          size="large" 
-          block 
-          className="!h-14 !text-lg !font-semibold !bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-xl shadow-md hover:shadow-lg transition-all"
-        >
-          Enroll Now
-        </Button>
-        <Button 
-          size="large" 
-          block 
-          className="!h-12 !text-base !font-medium !border-[#012643] !text-[#012643] hover:!bg-[#012643] hover:!text-white !rounded-xl transition-all"
-        >
-          Add to Cart
-        </Button>
+        {isCheckingEnrollment ? (
+          <div className="flex justify-center py-4"><Spin /></div>
+        ) : isEnrolled ? (
+          <>
+            <Button 
+              type="primary" 
+              size="large" 
+              block 
+              icon={<BookOutlined />}
+              onClick={handleGoToCourse}
+              className="!h-14 !text-lg !font-semibold !bg-[#17EAD9] !border-[#17EAD9] hover:!bg-[#12c5b5] !rounded-xl shadow-md hover:shadow-lg transition-all"
+            >
+              Vào học ngay
+            </Button>
+            <Text className="block text-center text-green-600 text-sm">
+              <CheckCircleOutlined className="mr-1" />
+              Bạn đã đăng ký khóa học này
+            </Text>
+          </>
+        ) : (
+          <>
+            <Button 
+              type="primary" 
+              size="large" 
+              block 
+              loading={isEnrolling}
+              onClick={handleEnroll}
+              className="!h-14 !text-lg !font-semibold !bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-xl shadow-md hover:shadow-lg transition-all"
+            >
+              Đăng ký ngay
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Money Back Guarantee */}
       <div className="bg-green-50 p-3 rounded-xl mb-6 flex items-center gap-3">
         <SafetyCertificateOutlined className="text-green-500 text-xl" />
-        <Text className="text-green-700 text-sm">30-Day Money-Back Guarantee</Text>
+        <Text className="text-green-700 text-sm">Đảm bảo hoàn tiền trong 30 ngày</Text>
       </div>
 
       {/* Course Info */}
       <div className="space-y-4 mb-6">
-        <h4 className="font-bold text-[#012643]">This course includes:</h4>
+        <h4 className="font-bold text-[#012643]">Khóa học bao gồm:</h4>
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-gray-600">
             <CheckCircleOutlined className="text-[#17EAD9]" />
-            <span>{course.duration || '12h 30m'} on-demand video</span>
+            <span>{course.duration || '12h 30m'} video theo yêu cầu</span>
           </div>
           <div className="flex items-center gap-3 text-gray-600">
             <CheckCircleOutlined className="text-[#17EAD9]" />
-            <span>{course.lessons} lessons</span>
+            <span>{course.lessons} bài học</span>
           </div>
           <div className="flex items-center gap-3 text-gray-600">
             <CheckCircleOutlined className="text-[#17EAD9]" />
-            <span>Downloadable resources</span>
+            <span>Tài liệu tải xuống</span>
           </div>
           <div className="flex items-center gap-3 text-gray-600">
             <CheckCircleOutlined className="text-[#17EAD9]" />
-            <span>Certificate of completion</span>
+            <span>Chứng chỉ hoàn thành</span>
           </div>
           <div className="flex items-center gap-3 text-gray-600">
             <CheckCircleOutlined className="text-[#17EAD9]" />
-            <span>Lifetime access</span>
+            <span>Truy cập trọn đời</span>
           </div>
         </div>
       </div>
@@ -151,13 +200,13 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
       <div className="space-y-3 mb-6 p-4 bg-gray-50 rounded-xl">
         <div className="flex justify-between items-center">
           <span className="text-gray-500 flex items-center gap-2">
-            <ClockCircleOutlined className="text-[#e5698e]" /> Start Time
+            <ClockCircleOutlined className="text-[#e5698e]" /> Giờ bắt đầu
           </span>
           <span className="font-semibold text-[#012643]">{course.time?.startDisplay}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-500 flex items-center gap-2">
-            <CalendarOutlined className="text-[#e5698e]" /> Schedule
+            <CalendarOutlined className="text-[#e5698e]" /> Lịch học
           </span>
           <div className="flex gap-1">
             {course.schedule?.map(day => (
@@ -173,7 +222,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
           <Avatar src={course.teacher?.avatar} size={48} />
           <div>
             <Text className="font-semibold text-[#012643] block">{course.teacher?.name}</Text>
-            <Text className="text-gray-500 text-sm">Instructor</Text>
+            <Text className="text-gray-500 text-sm">Giảng viên</Text>
           </div>
         </div>
       </div>
@@ -185,7 +234,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
         onClick={() => setReportModalOpen(true)}
         className="!text-gray-400 hover:!text-red-500 w-full"
       >
-        Report this course
+        Báo cáo khóa học
       </Button>
 
       {/* Social Share */}
@@ -209,7 +258,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
         title={
           <div className="flex items-center gap-2 text-red-500">
             <ExclamationCircleOutlined />
-            <span>Report Course</span>
+            <span>Báo cáo khóa học</span>
           </div>
         }
         open={reportModalOpen}
@@ -221,15 +270,15 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
       >
         <Form form={reportForm} onFinish={handleReportCourse} layout="vertical">
           <p className="text-gray-500 mb-4">
-            Help us maintain quality content. Please tell us what's wrong with this course.
+            Giúp chúng tôi duy trì nội dung chất lượng. Vui lòng cho biết vấn đề của khóa học này.
           </p>
           
           <Form.Item 
             name="reason" 
-            label="Reason for reporting"
-            rules={[{ required: true, message: 'Please select a reason' }]}
+            label="Lý do báo cáo"
+            rules={[{ required: true, message: 'Vui lòng chọn lý do' }]}
           >
-            <Select placeholder="Select a reason">
+            <Select placeholder="Chọn lý do">
               {COURSE_REPORT_REASONS.map(reason => (
                 <Select.Option key={reason} value={reason}>{reason}</Select.Option>
               ))}
@@ -238,26 +287,26 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
           
           <Form.Item 
             name="details" 
-            label="Additional details"
-            rules={[{ required: true, message: 'Please provide details' }]}
+            label="Chi tiết bổ sung"
+            rules={[{ required: true, message: 'Vui lòng mô tả chi tiết' }]}
           >
             <TextArea 
               rows={4} 
-              placeholder="Please describe the issue in detail. Include specific examples if possible..."
+              placeholder="Vui lòng mô tả vấn đề chi tiết. Nêu ví dụ cụ thể nếu có..."
             />
           </Form.Item>
           
           <Form.Item 
             name="email" 
-            label="Your email (for follow-up)"
+            label="Email của bạn (để theo dõi)"
           >
-            <Input placeholder="optional@email.com" />
+            <Input placeholder="email@example.com" />
           </Form.Item>
           
           <div className="flex justify-end gap-3">
-            <Button onClick={() => setReportModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setReportModalOpen(false)}>Hủy</Button>
             <Button type="primary" htmlType="submit" danger>
-              Submit Report
+              Gửi báo cáo
             </Button>
           </div>
         </Form>

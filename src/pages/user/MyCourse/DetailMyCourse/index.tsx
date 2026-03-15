@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { Card, Col, Row, Typography, Progress, Avatar, Breadcrumb, Tag, Button } from 'antd';
+import React from 'react';
+import { Card, Col, Row, Typography, Progress, Avatar, Breadcrumb, Tag, Button, Spin } from 'antd';
 import { Link, useParams } from 'react-router-dom';
 import {
   TeamOutlined,
-  RocketOutlined,
   ReadOutlined,
   BookOutlined,
   BellOutlined,
@@ -14,86 +13,97 @@ import {
   CalendarOutlined,
   ArrowRightOutlined,
 } from '@ant-design/icons';
+import { useGetCourseByIdQuery, useCheckEnrollmentQuery } from '../../../../services/courseApi';
+import { useGetProfileQuery } from '../../../../services/authApi';
+import { useGetMaterialsByCourseQuery, useGetAssignmentsByCourseQuery, useGetQuizzesByCourseQuery } from '../../../../services/learningApi';
+import { useGetEnrollmentsByCourseQuery } from '../../../../services/courseApi';
 
 const { Title, Text } = Typography;
 
 const DetailMyCourse: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [userRole] = useState<'student' | 'teacher'>('teacher'); // Mock: change to test roles
+  const { id: courseId } = useParams<{ id: string }>();
+  const { data: profileData } = useGetProfileQuery();
+  const userRole = (profileData?.data?.role as 'student' | 'teacher') || 'student';
 
-  // Mock course data
-  const courseInfo = {
-    title: 'The Complete Web Developer Course 2.0',
-    teacher: 'John Smith',
-    teacherAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    progress: 48,
-    totalLessons: 25,
-    completedLessons: 12,
-    nextLesson: 'Flexbox Layout',
-    nextLessonTime: 'Tomorrow at 10:00 AM',
-    image: 'https://img.freepik.com/free-photo/programming-background-with-person-working-with-codes-computer_23-2150010125.jpg',
-  };
+  const { data: courseData, isLoading: courseLoading } = useGetCourseByIdQuery(
+    { id: courseId!, include: 'teacher,lessons,category' },
+    { skip: !courseId }
+  );
+  const { data: enrollmentData } = useCheckEnrollmentQuery(courseId!, { skip: !courseId });
+  const { data: membersData } = useGetEnrollmentsByCourseQuery(courseId!, { skip: !courseId });
+  const { data: materialsData } = useGetMaterialsByCourseQuery(courseId!, { skip: !courseId });
+  const { data: assignmentsData } = useGetAssignmentsByCourseQuery(courseId!, { skip: !courseId });
+  const { data: quizzesData } = useGetQuizzesByCourseQuery(courseId!, { skip: !courseId });
+
+  const course = courseData?.data;
+  const enrollment = enrollmentData?.data?.enrollment;
+  const memberCount = membersData?.data?.length || 0;
+  const materialCount = materialsData?.data?.length || 0;
+  const assignmentCount = assignmentsData?.data?.length || 0;
+  const quizCount = quizzesData?.data?.length || 0;
+  const totalLessons = course?.totalLessons || course?.lessons?.length || 0;
+  const progressValue = enrollment?.progress || 0;
+  const completedLessons = totalLessons > 0 ? Math.round((progressValue / 100) * totalLessons) : 0;
+  const teacherName = course?.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : '';
+
+  if (courseLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   const menuItems = [
     {
       key: 'classroom',
-      title: 'Classroom',
-      description: 'View members and manage class participants',
+      title: 'Lớp học',
+      description: userRole === 'teacher' ? 'Quản lý thành viên lớp học' : 'Xem thành viên lớp học',
       icon: <TeamOutlined className="text-3xl" />,
-      link: `/my-course/classroom/${id}`,
+      link: `/my-course/classroom/${courseId}`,
       color: 'from-blue-500 to-blue-600',
-      stats: '32 Members',
-      badge: userRole === 'teacher' ? 'Manage' : null,
-    },
-    {
-      key: 'learning-path',
-      title: 'Learning Path',
-      description: 'Course roadmap and curriculum overview',
-      icon: <RocketOutlined className="text-3xl" />,
-      link: `/my-course/learning-path/${id}`,
-      color: 'from-purple-500 to-indigo-600',
-      stats: '4 Modules',
-      badge: null,
+      stats: `${memberCount} Thành viên`,
+      badge: userRole === 'teacher' ? 'Quản lý' : null,
     },
     {
       key: 'assignments',
-      title: 'Assignments',
-      description: userRole === 'teacher' ? 'Create and grade assignments' : 'Submit and track assignments',
+      title: 'Bài tập',
+      description: userRole === 'teacher' ? 'Tạo và chấm bài tập' : 'Nộp và theo dõi bài tập',
       icon: <FileTextOutlined className="text-3xl" />,
-      link: `/my-course/assignment/index/${id}`,
+      link: `/my-course/assignment/index/${courseId}`,
       color: 'from-orange-500 to-red-500',
-      stats: '3 Pending',
-      badge: userRole === 'teacher' ? 'Create' : '2 Due',
+      stats: `${assignmentCount} Bài tập`,
+      badge: userRole === 'teacher' ? 'Tạo mới' : null,
     },
     {
       key: 'quizzes',
-      title: 'Quizzes',
-      description: userRole === 'teacher' ? 'Create and manage quizzes' : 'Take quizzes to test knowledge',
+      title: 'Bài kiểm tra',
+      description: userRole === 'teacher' ? 'Tạo và quản lý bài kiểm tra' : 'Làm bài kiểm tra',
       icon: <ReadOutlined className="text-3xl" />,
-      link: `/my-course/quizz/${id}`,
+      link: `/my-course/quizz/${courseId}`,
       color: 'from-green-500 to-emerald-600',
-      stats: '4 Quizzes',
-      badge: userRole === 'teacher' ? 'Create' : null,
+      stats: `${quizCount} Bài kiểm tra`,
+      badge: userRole === 'teacher' ? 'Tạo mới' : null,
     },
     {
       key: 'materials',
-      title: 'Materials',
-      description: userRole === 'teacher' ? 'Upload and manage course materials' : 'Download course resources',
+      title: 'Tài liệu',
+      description: userRole === 'teacher' ? 'Tải lên và quản lý tài liệu' : 'Tải xuống tài liệu khóa học',
       icon: <BookOutlined className="text-3xl" />,
-      link: `/my-course/material/${id}`,
+      link: `/my-course/material/${courseId}`,
       color: 'from-cyan-500 to-teal-500',
-      stats: '6 Files',
-      badge: userRole === 'teacher' ? 'Upload' : null,
+      stats: `${materialCount} Tệp`,
+      badge: userRole === 'teacher' ? 'Tải lên' : null,
     },
     {
       key: 'notifications',
-      title: 'Announcements',
-      description: userRole === 'teacher' ? 'Post announcements to class' : 'View class announcements',
+      title: 'Thông báo',
+      description: userRole === 'teacher' ? 'Đăng thông báo cho lớp' : 'Xem thông báo lớp học',
       icon: <BellOutlined className="text-3xl" />,
-      link: `/my-course/notifications/${id}`,
+      link: `/my-course/notifications/${courseId}`,
       color: 'from-pink-500 to-rose-500',
-      stats: '2 New',
-      badge: userRole === 'teacher' ? 'Post' : null,
+      stats: 'Thông báo',
+      badge: userRole === 'teacher' ? 'Đăng' : null,
     },
   ];
 
@@ -104,9 +114,9 @@ const DetailMyCourse: React.FC = () => {
         <Breadcrumb 
           className="mb-6"
           items={[
-            { title: <Link to="/"><HomeOutlined /> Home</Link> },
-            { title: <Link to="/my-course">My Courses</Link> },
-            { title: courseInfo.title },
+            { title: <Link to="/"><HomeOutlined /> Trang chủ</Link> },
+            { title: <Link to="/my-course">Khóa học của tôi</Link> },
+            { title: course?.title || 'Chi tiết khóa học' },
           ]}
         />
 
@@ -116,8 +126,8 @@ const DetailMyCourse: React.FC = () => {
             {/* Course Image */}
             <div className="lg:w-80 h-48 lg:h-auto rounded-xl overflow-hidden flex-shrink-0">
               <img 
-                src={courseInfo.image} 
-                alt={courseInfo.title} 
+                src={course?.thumbnail || 'https://placehold.co/400x250?text=Course'} 
+                alt={course?.title} 
                 className="w-full h-full object-cover"
               />
             </div>
@@ -127,14 +137,14 @@ const DetailMyCourse: React.FC = () => {
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
                   <Tag color={userRole === 'teacher' ? 'gold' : 'blue'} className="!rounded-full !mb-2">
-                    {userRole === 'teacher' ? '👨‍🏫 Instructor' : '👨‍🎓 Student'}
+                    {userRole === 'teacher' ? '👨‍🏫 Giảng viên' : '👨‍🎓 Học viên'}
                   </Tag>
-                  <Title level={2} className="!text-[#012643] !mb-2">{courseInfo.title}</Title>
+                  <Title level={2} className="!text-[#012643] !mb-2">{course?.title}</Title>
                   <div className="flex items-center gap-3">
-                    <Avatar src={courseInfo.teacherAvatar} size={40} />
+                    <Avatar src={course?.teacher?.avatar} size={40} />
                     <div>
-                      <Text className="block font-semibold text-[#012643]">{courseInfo.teacher}</Text>
-                      <Text className="text-gray-500 text-sm">Instructor</Text>
+                      <Text className="block font-semibold text-[#012643]">{teacherName}</Text>
+                      <Text className="text-gray-500 text-sm">Giảng viên</Text>
                     </div>
                   </div>
                 </div>
@@ -143,22 +153,22 @@ const DetailMyCourse: React.FC = () => {
               {/* Progress Section */}
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Text className="font-semibold text-[#012643]">Course Progress</Text>
-                  <Text className="text-2xl font-bold text-[#17EAD9]">{courseInfo.progress}%</Text>
+                  <Text className="font-semibold text-[#012643]">Tiến độ khóa học</Text>
+                  <Text className="text-2xl font-bold text-[#17EAD9]">{progressValue}%</Text>
                 </div>
                 <Progress 
-                  percent={courseInfo.progress} 
+                  percent={progressValue} 
                   strokeColor={{ '0%': '#17EAD9', '100%': '#012643' }}
                   showInfo={false}
                   size={{ height: 10 }}
                 />
                 <div className="flex justify-between mt-2 text-sm text-gray-500">
-                  <span><TrophyOutlined className="mr-1" />{courseInfo.completedLessons} completed</span>
-                  <span>{courseInfo.totalLessons - courseInfo.completedLessons} remaining</span>
+                  <span><TrophyOutlined className="mr-1" />{completedLessons} đã hoàn thành</span>
+                  <span>{totalLessons - completedLessons} còn lại</span>
                 </div>
               </div>
 
-              {/* Next Lesson Info */}
+              {/* Course Info Cards */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 bg-blue-50 rounded-xl p-4">
                   <div className="flex items-center gap-3">
@@ -166,8 +176,8 @@ const DetailMyCourse: React.FC = () => {
                       <PlayCircleOutlined className="text-white text-xl" />
                     </div>
                     <div>
-                      <Text className="text-xs text-blue-600 font-medium">NEXT LESSON</Text>
-                      <Text className="block font-semibold text-[#012643]">{courseInfo.nextLesson}</Text>
+                      <Text className="text-xs text-blue-600 font-medium">TỔNG BÀI HỌC</Text>
+                      <Text className="block font-semibold text-[#012643]">{totalLessons} bài học</Text>
                     </div>
                   </div>
                 </div>
@@ -177,8 +187,8 @@ const DetailMyCourse: React.FC = () => {
                       <CalendarOutlined className="text-white text-xl" />
                     </div>
                     <div>
-                      <Text className="text-xs text-green-600 font-medium">SCHEDULED</Text>
-                      <Text className="block font-semibold text-[#012643]">{courseInfo.nextLessonTime}</Text>
+                      <Text className="text-xs text-green-600 font-medium">CẤP ĐỘ</Text>
+                      <Text className="block font-semibold text-[#012643]">{course?.level || 'Tất cả'}</Text>
                     </div>
                   </div>
                 </div>
@@ -213,7 +223,7 @@ const DetailMyCourse: React.FC = () => {
                   <div className="p-5">
                     <Text className="text-gray-600 block mb-3">{item.description}</Text>
                     <div className="flex items-center text-[#012643] font-medium group-hover:translate-x-2 transition-transform">
-                      <span>Open</span>
+                      <span>Mở</span>
                       <ArrowRightOutlined className="ml-2" />
                     </div>
                   </div>
@@ -226,23 +236,28 @@ const DetailMyCourse: React.FC = () => {
         {/* Quick Actions for Teacher */}
         {userRole === 'teacher' && (
           <Card className="rounded-2xl border-0 shadow-md mt-8">
-            <Title level={4} className="!text-[#012643] !mb-4">Quick Actions</Title>
+            <Title level={4} className="!text-[#012643] !mb-4">Thao tác nhanh</Title>
             <div className="flex flex-wrap gap-3">
-              <Button type="primary" icon={<TeamOutlined />} className="!bg-blue-500 !border-blue-500 !rounded-lg">
-                Add Student
-              </Button>
-              <Button type="primary" icon={<FileTextOutlined />} className="!bg-orange-500 !border-orange-500 !rounded-lg">
-                Create Assignment
-              </Button>
-              <Button type="primary" icon={<ReadOutlined />} className="!bg-green-500 !border-green-500 !rounded-lg">
-                Create Quiz
-              </Button>
-              <Button type="primary" icon={<BookOutlined />} className="!bg-cyan-500 !border-cyan-500 !rounded-lg">
-                Upload Material
-              </Button>
-              <Button type="primary" icon={<BellOutlined />} className="!bg-pink-500 !border-pink-500 !rounded-lg">
-                Post Announcement
-              </Button>
+              <Link to={`/my-course/classroom/${courseId}`}>
+                <Button type="primary" icon={<TeamOutlined />} className="!bg-blue-500 !border-blue-500 !rounded-lg">
+                  Thêm học viên
+                </Button>
+              </Link>
+              <Link to={`/my-course/assignment/index/${courseId}`}>
+                <Button type="primary" icon={<FileTextOutlined />} className="!bg-orange-500 !border-orange-500 !rounded-lg">
+                  Tạo bài tập
+                </Button>
+              </Link>
+              <Link to={`/my-course/quizz/${courseId}`}>
+                <Button type="primary" icon={<ReadOutlined />} className="!bg-green-500 !border-green-500 !rounded-lg">
+                  Tạo bài kiểm tra
+                </Button>
+              </Link>
+              <Link to={`/my-course/material/${courseId}`}>
+                <Button type="primary" icon={<BookOutlined />} className="!bg-cyan-500 !border-cyan-500 !rounded-lg">
+                  Tải lên tài liệu
+                </Button>
+              </Link>
             </div>
           </Card>
         )}

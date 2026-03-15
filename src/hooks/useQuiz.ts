@@ -1,13 +1,44 @@
 import { useState, useMemo } from 'react';
 import { message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { MOCK_QUIZZES } from '../constants/myCourseData';
+import {
+  useGetQuizzesByCourseQuery,
+  useCreateQuizMutation,
+  useUpdateQuizMutation,
+  useDeleteQuizMutation,
+  useStartQuizAttemptMutation,
+} from '../services/learningApi';
+import { useGetProfileQuery } from '../services/authApi';
 import type { QuizItem } from '../types/myCourse';
 
-export const useQuiz = () => {
+export const useQuiz = (courseId: string) => {
   const navigate = useNavigate();
-  const [userRole] = useState<'student' | 'teacher'>('teacher');
-  const [quizzes, setQuizzes] = useState<QuizItem[]>(MOCK_QUIZZES);
+  const { data: profileData } = useGetProfileQuery();
+  const userRole = (profileData?.data?.role as 'student' | 'teacher') || 'student';
+
+  const { data: quizzesData, isLoading } = useGetQuizzesByCourseQuery(courseId, {
+    skip: !courseId,
+  });
+  const [createQuiz] = useCreateQuizMutation();
+  const [updateQuiz] = useUpdateQuizMutation();
+  const [deleteQuiz] = useDeleteQuizMutation();
+  const [startQuizAttempt] = useStartQuizAttemptMutation();
+
+  const quizzes: QuizItem[] = useMemo(() => {
+    const raw = quizzesData?.data;
+    if (!raw) return [];
+    return raw.map((q) => ({
+      id: q.id,
+      title: q.title,
+      description: q.description || '',
+      duration: q.duration,
+      questions: q.totalQuestions,
+      attempts: 0,
+      maxAttempts: q.maxAttempts,
+      status: 'not-started' as const,
+    }));
+  }, [quizzesData]);
+
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,12 +65,12 @@ export const useQuiz = () => {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'completed':
-        return { color: 'success', text: 'Completed' };
+        return { color: 'success', text: 'Hoàn thành' };
       case 'in-progress':
-        return { color: 'processing', text: 'In Progress' };
+        return { color: 'processing', text: 'Đang làm' };
       case 'not-started':
       default:
-        return { color: 'default', text: 'Not Started' };
+        return { color: 'default', text: 'Chưa bắt đầu' };
     }
   };
 
@@ -53,32 +84,39 @@ export const useQuiz = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (quizId: string) => {
-    setQuizzes(quizzes.filter(q => q.id !== quizId));
-    message.success('Quiz deleted successfully');
-  };
-
-  const handleSubmit = (values: any) => {
-    if (selectedQuiz) {
-      setQuizzes(quizzes.map(q => 
-        q.id === selectedQuiz.id ? { ...q, ...values } : q
-      ));
-      message.success('Quiz updated successfully');
-    } else {
-      const newQuiz: QuizItem = {
-        id: Date.now().toString(),
-        ...values,
-        attempts: 0,
-        status: 'not-started',
-      };
-      setQuizzes([...quizzes, newQuiz]);
-      message.success('Quiz created successfully');
+  const handleDelete = async (quizId: string) => {
+    try {
+      await deleteQuiz(quizId).unwrap();
+      message.success('Đã xóa bài kiểm tra');
+    } catch {
+      message.error('Xóa bài kiểm tra thất bại');
     }
-    setIsModalOpen(false);
   };
 
-  const handleStartQuiz = (quiz: QuizItem) => {
-    navigate(`/my-course/quizz/practics/${quiz.id}`);
+  const handleSubmit = async (values: { title: string; description?: string; duration: number; totalQuestions: number; maxAttempts: number }) => {
+    try {
+      if (selectedQuiz) {
+        await updateQuiz({ id: selectedQuiz.id, data: values }).unwrap();
+        message.success('Đã cập nhật bài kiểm tra');
+      } else {
+        await createQuiz({ ...values, courseId }).unwrap();
+        message.success('Đã tạo bài kiểm tra');
+      }
+      setIsModalOpen(false);
+    } catch {
+      message.error(selectedQuiz ? 'Cập nhật thất bại' : 'Tạo bài kiểm tra thất bại');
+    }
+  };
+
+  const handleStartQuiz = async (quiz: QuizItem) => {
+    try {
+      const result = await startQuizAttempt(quiz.id).unwrap();
+      if (result.data) {
+        navigate(`/my-course/quizz/practics/${result.data.id}`);
+      }
+    } catch {
+      message.error('Không thể bắt đầu bài kiểm tra');
+    }
   };
 
   const closeModal = () => {
@@ -96,6 +134,7 @@ export const useQuiz = () => {
     isModalOpen,
     selectedQuiz,
     stats,
+    isLoading,
     getStatusConfig,
     handleCreate,
     handleEdit,
