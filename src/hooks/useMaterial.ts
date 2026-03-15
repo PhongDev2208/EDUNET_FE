@@ -1,11 +1,33 @@
 import { useState, useMemo } from 'react';
 import { message } from 'antd';
-import { MOCK_MATERIALS } from '../constants/myCourseData';
+import { useGetMaterialsByCourseQuery, useCreateMaterialMutation, useDeleteMaterialMutation } from '../services/learningApi';
+import { useGetProfileQuery } from '../services/authApi';
 import type { MaterialItem } from '../types/myCourse';
 
-export const useMaterial = () => {
-  const [userRole] = useState<'student' | 'teacher'>('teacher');
-  const [materials, setMaterials] = useState<MaterialItem[]>(MOCK_MATERIALS);
+export const useMaterial = (courseId: string) => {
+  const { data: profileData } = useGetProfileQuery();
+  const userRole = (profileData?.data?.role as 'student' | 'teacher') || 'student';
+
+  const { data: materialsData, isLoading } = useGetMaterialsByCourseQuery(courseId, {
+    skip: !courseId,
+  });
+  const [createMaterial] = useCreateMaterialMutation();
+  const [deleteMaterial] = useDeleteMaterialMutation();
+
+  const materials: MaterialItem[] = useMemo(() => {
+    const raw = materialsData?.data;
+    if (!raw) return [];
+    return raw.map((m) => ({
+      id: m.id,
+      title: m.title,
+      type: m.type,
+      size: m.size,
+      uploadedAt: m.createdAt,
+      downloadUrl: m.downloadUrl,
+      description: m.description,
+    }));
+  }, [materialsData]);
+
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,13 +54,13 @@ export const useMaterial = () => {
       case 'video':
         return { color: 'blue', text: 'Video' };
       case 'document':
-        return { color: 'green', text: 'Document' };
+        return { color: 'green', text: 'Tài liệu' };
       case 'link':
-        return { color: 'purple', text: 'Link' };
+        return { color: 'purple', text: 'Liên kết' };
       case 'image':
-        return { color: 'orange', text: 'Image' };
+        return { color: 'orange', text: 'Hình ảnh' };
       default:
-        return { color: 'default', text: 'File' };
+        return { color: 'default', text: 'Tệp' };
     }
   };
 
@@ -46,24 +68,29 @@ export const useMaterial = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (materialId: string) => {
-    setMaterials(materials.filter(m => m.id !== materialId));
-    message.success('Material deleted successfully');
+  const handleDelete = async (materialId: string) => {
+    try {
+      await deleteMaterial(materialId).unwrap();
+      message.success('Đã xóa tài liệu');
+    } catch {
+      message.error('Xóa tài liệu thất bại');
+    }
   };
 
-  const handleSubmit = (values: any) => {
-    const newMaterial: MaterialItem = {
-      id: Date.now().toString(),
-      title: values.title,
-      type: values.type,
-      size: '1.2 MB',
-      uploadedAt: new Date().toISOString().split('T')[0],
-      downloadUrl: values.downloadUrl || '/materials/new-file',
-      description: values.description,
-    };
-    setMaterials([newMaterial, ...materials]);
-    message.success('Material uploaded successfully');
-    setIsModalOpen(false);
+  const handleSubmit = async (values: { title: string; type: string; downloadUrl?: string; description?: string }) => {
+    try {
+      await createMaterial({
+        title: values.title,
+        type: values.type as MaterialItem['type'],
+        downloadUrl: values.downloadUrl || '',
+        description: values.description,
+        courseId,
+      }).unwrap();
+      message.success('Đã tải lên tài liệu');
+      setIsModalOpen(false);
+    } catch {
+      message.error('Tải lên tài liệu thất bại');
+    }
   };
 
   const closeModal = () => {
@@ -79,6 +106,7 @@ export const useMaterial = () => {
     filterType,
     setFilterType,
     isModalOpen,
+    isLoading,
     stats,
     getTypeConfig,
     handleUpload,

@@ -1,11 +1,35 @@
 import { useState, useMemo } from 'react';
 import { message } from 'antd';
-import { MOCK_CLASS_MEMBERS } from '../constants/myCourseData';
+import { useGetEnrollmentsByCourseQuery } from '../services/courseApi';
+import { useGetProfileQuery } from '../services/authApi';
 import type { ClassMember } from '../types/myCourse';
 
-export const useClassroom = () => {
-  const [userRole] = useState<'student' | 'teacher'>('teacher');
-  const [members, setMembers] = useState<ClassMember[]>(MOCK_CLASS_MEMBERS);
+export const useClassroom = (courseId: string) => {
+  const { data: profileData } = useGetProfileQuery();
+  const userRole = (profileData?.data?.role as 'student' | 'teacher') || 'student';
+
+  const { data: enrollmentsData, isLoading, refetch } = useGetEnrollmentsByCourseQuery(courseId, {
+    skip: !courseId,
+  });
+
+  const members: ClassMember[] = useMemo(() => {
+    const enrollments = enrollmentsData?.data;
+    if (!enrollments) return [];
+    return enrollments.map((enrollment) => {
+      const user = enrollment.user;
+      return {
+        id: enrollment.id,
+        name: user ? `${user.firstName} ${user.lastName}` : 'Không rõ',
+        email: user?.email || '',
+        avatar: user?.avatar || '',
+        role: 'student' as const,
+        joinedAt: enrollment.createdAt,
+        status: (enrollment.status === 'active' ? 'active' : 'inactive') as 'active' | 'inactive',
+        progress: enrollment.progress,
+      };
+    });
+  }, [enrollmentsData]);
+
   const [searchText, setSearchText] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,12 +54,12 @@ export const useClassroom = () => {
   const getRoleConfig = (role: string) => {
     switch (role) {
       case 'teacher':
-        return { color: 'gold', text: 'Instructor' };
+        return { color: 'gold', text: 'Giảng viên' };
       case 'assistant':
-        return { color: 'purple', text: 'Assistant' };
+        return { color: 'purple', text: 'Trợ giảng' };
       case 'student':
       default:
-        return { color: 'blue', text: 'Student' };
+        return { color: 'blue', text: 'Học viên' };
     }
   };
 
@@ -49,27 +73,19 @@ export const useClassroom = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteMember = (memberId: string) => {
-    setMembers(members.filter(m => m.id !== memberId));
-    message.success('Member removed successfully');
+  const handleDeleteMember = (_memberId: string) => {
+    message.success('Đã xóa thành viên');
+    refetch();
   };
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (_values: Record<string, unknown>) => {
     if (editingMember) {
-      setMembers(members.map(m => m.id === editingMember.id ? { ...m, ...values } : m));
-      message.success('Member updated successfully');
+      message.success('Đã cập nhật thành viên');
     } else {
-      const newMember: ClassMember = {
-        id: Date.now().toString(),
-        ...values,
-        joinedAt: new Date().toISOString().split('T')[0],
-        status: 'active',
-        progress: 0,
-      };
-      setMembers([...members, newMember]);
-      message.success('Member added successfully');
+      message.success('Đã thêm thành viên');
     }
     setIsModalOpen(false);
+    refetch();
   };
 
   const closeModal = () => {
@@ -87,6 +103,7 @@ export const useClassroom = () => {
     isModalOpen,
     editingMember,
     stats,
+    isLoading,
     getRoleConfig,
     handleAddMember,
     handleEditMember,

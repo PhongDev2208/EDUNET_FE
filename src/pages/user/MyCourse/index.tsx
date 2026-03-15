@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Input, Select, Tag, Typography, Progress, Empty, Segmented, Row, Col, Avatar } from 'antd';
+import { Card, Button, Input, Select, Tag, Typography, Progress, Empty, Segmented, Row, Col, Spin } from 'antd';
 import { 
   EyeOutlined, 
   PlayCircleOutlined, 
@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useMyCourse } from '../../../hooks';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
@@ -29,6 +30,7 @@ const MyCourse: React.FC = () => {
     filteredCourses,
     stats,
     getStatusConfig,
+    isLoading,
   } = useMyCourse();
 
   const getStatusIcon = (status: string) => {
@@ -92,30 +94,34 @@ const MyCourse: React.FC = () => {
               <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                 <span className="flex items-center gap-1">
                   <BookOutlined />
-                  {course.lessons} lessons
+                  {course.lessons} bài học
                 </span>
                 {course.status === 'completed' && course.completedDate && (
                   <span className="flex items-center gap-1 text-green-500">
                     <TrophyOutlined />
-                    Completed
+                    {dayjs(course.completedDate).format('DD/MM/YYYY')}
                   </span>
                 )}
               </div>
 
-              {course.status === 'learning' && course.nextLesson && (
+              {course.status === 'learning' && (
                 <div className="bg-blue-50 p-3 rounded-xl mb-4">
-                  <Text className="text-xs text-blue-600 font-medium">Next Lesson:</Text>
-                  <Text className="block text-sm text-[#012643] font-semibold truncate">{course.nextLesson}</Text>
-                  <Text className="text-xs text-gray-500">{course.nextLessonTime}</Text>
+                  <Text className="text-xs text-blue-600 font-medium">Tiến độ:</Text>
+                  <Progress 
+                    percent={course.progress} 
+                    size="small" 
+                    strokeColor="#17EAD9" 
+                    className="!mb-0"
+                  />
                 </div>
               )}
 
               {course.status === 'pending' && course.startDate && (
                 <div className="bg-orange-50 p-3 rounded-xl mb-4">
                   <Text className="text-xs text-orange-600 font-medium flex items-center gap-1">
-                    <CalendarOutlined /> Starts on
+                    <CalendarOutlined /> Bắt đầu
                   </Text>
-                  <Text className="block text-sm text-[#012643] font-semibold">{course.startDate}</Text>
+                  <Text className="block text-sm text-[#012643] font-semibold">{dayjs(course.startDate).format('DD/MM/YYYY')}</Text>
                 </div>
               )}
 
@@ -127,17 +133,19 @@ const MyCourse: React.FC = () => {
                     icon={<EyeOutlined />}
                     className="!bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-lg"
                   >
-                    View
+                    Chi tiết
                   </Button>
                 </Link>
                 {course.status === 'learning' && (
-                  <Button 
-                    type="default"
-                    icon={<PlayCircleOutlined />}
-                    className="!border-[#17EAD9] !text-[#17EAD9] hover:!bg-[#17EAD9] hover:!text-white !rounded-lg"
-                  >
-                    Continue
-                  </Button>
+                  <Link to={`/my-course/classroom/${course.id}`}>
+                    <Button 
+                      type="default"
+                      icon={<PlayCircleOutlined />}
+                      className="!border-[#17EAD9] !text-[#17EAD9] hover:!bg-[#17EAD9] hover:!text-white !rounded-lg"
+                    >
+                      Tiếp tục
+                    </Button>
+                  </Link>
                 )}
               </div>
             </Card>
@@ -180,19 +188,19 @@ const MyCourse: React.FC = () => {
                     <Title level={4} className="!text-[#012643] !mb-2">{course.title}</Title>
                     <div className="flex items-center gap-4 text-gray-500 text-sm mb-4">
                       <span className="flex items-center gap-2">
-                        <Avatar size="small" src={`https://randomuser.me/api/portraits/men/${course.id}.jpg`} />
+                        <UserOutlined />
                         {course.teacher}
                       </span>
                       <span className="flex items-center gap-1">
                         <BookOutlined />
-                        {course.lessons} lessons
+                        {course.lessons} bài học
                       </span>
                     </div>
 
                     {course.status === 'learning' && (
                       <div className="max-w-md">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-500">Progress</span>
+                          <span className="text-gray-500">Tiến độ</span>
                           <span className="font-semibold text-[#012643]">{course.progress}%</span>
                         </div>
                         <Progress 
@@ -200,13 +208,6 @@ const MyCourse: React.FC = () => {
                           strokeColor={{ '0%': '#17EAD9', '100%': '#012643' }}
                           showInfo={false}
                         />
-                        {course.nextLesson && (
-                          <div className="mt-3 text-sm">
-                            <span className="text-gray-500">Next: </span>
-                            <span className="text-[#012643] font-medium">{course.nextLesson}</span>
-                            <span className="text-gray-400 ml-2">• {course.nextLessonTime}</span>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -218,17 +219,19 @@ const MyCourse: React.FC = () => {
                         icon={<EyeOutlined />}
                         className="!bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-lg"
                       >
-                        View Details
+                        Chi tiết
                       </Button>
                     </Link>
                     {course.status === 'learning' && (
-                      <Button 
-                        type="default"
-                        icon={<PlayCircleOutlined />}
-                        className="!border-[#17EAD9] !text-[#17EAD9] hover:!bg-[#17EAD9] hover:!text-white !rounded-lg"
-                      >
-                        Continue
-                      </Button>
+                      <Link to={`/my-course/classroom/${course.id}`}>
+                        <Button 
+                          type="default"
+                          icon={<PlayCircleOutlined />}
+                          className="!border-[#17EAD9] !text-[#17EAD9] hover:!bg-[#17EAD9] hover:!text-white !rounded-lg"
+                        >
+                          Tiếp tục
+                        </Button>
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -245,8 +248,8 @@ const MyCourse: React.FC = () => {
       <div className="container mx-auto px-4 lg:px-6">
         {/* Header */}
         <div className="mb-8">
-          <Title level={2} className="!text-[#012643] !mb-2">My Learning</Title>
-          <Text className="text-gray-500 text-lg">Track your progress and continue learning</Text>
+          <Title level={2} className="!text-[#012643] !mb-2">Khóa học của tôi</Title>
+          <Text className="text-gray-500 text-lg">Theo dõi tiến độ và tiếp tục học tập</Text>
         </div>
 
         {/* Stats Cards */}
@@ -255,7 +258,7 @@ const MyCourse: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
               <div className="text-center">
                 <div className="text-3xl font-bold">{stats.total}</div>
-                <div className="text-blue-100 text-sm">Total Courses</div>
+                <div className="text-blue-100 text-sm">Tổng khóa học</div>
               </div>
             </Card>
           </Col>
@@ -263,7 +266,7 @@ const MyCourse: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-cyan-500 to-teal-500 text-white">
               <div className="text-center">
                 <div className="text-3xl font-bold">{stats.inProgress}</div>
-                <div className="text-cyan-100 text-sm">In Progress</div>
+                <div className="text-cyan-100 text-sm">Đang học</div>
               </div>
             </Card>
           </Col>
@@ -271,7 +274,7 @@ const MyCourse: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-green-500 to-emerald-500 text-white">
               <div className="text-center">
                 <div className="text-3xl font-bold">{stats.completed}</div>
-                <div className="text-green-100 text-sm">Completed</div>
+                <div className="text-green-100 text-sm">Hoàn thành</div>
               </div>
             </Card>
           </Col>
@@ -279,7 +282,7 @@ const MyCourse: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-orange-400 to-amber-500 text-white">
               <div className="text-center">
                 <div className="text-3xl font-bold">{stats.notStarted}</div>
-                <div className="text-orange-100 text-sm">Not Started</div>
+                <div className="text-orange-100 text-sm">Chưa bắt đầu</div>
               </div>
             </Card>
           </Col>
@@ -290,7 +293,7 @@ const MyCourse: React.FC = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex flex-wrap gap-3">
               <Input
-                placeholder="Search courses..."
+                placeholder="Tìm kiếm khóa học..."
                 prefix={<SearchOutlined className="text-gray-400" />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
@@ -300,13 +303,13 @@ const MyCourse: React.FC = () => {
               <Select 
                 value={filterStatus}
                 onChange={setFilterStatus}
-                style={{ width: 150 }}
+                style={{ width: 170 }}
                 className="!rounded-lg"
                 options={[
-                  { value: 'all', label: 'All Status' },
-                  { value: 'learning', label: 'In Progress' },
-                  { value: 'completed', label: 'Completed' },
-                  { value: 'pending', label: 'Not Started' },
+                  { value: 'all', label: 'Tất cả trạng thái' },
+                  { value: 'learning', label: 'Đang học' },
+                  { value: 'completed', label: 'Hoàn thành' },
+                  { value: 'pending', label: 'Chưa bắt đầu' },
                 ]}
               />
             </div>
@@ -323,14 +326,18 @@ const MyCourse: React.FC = () => {
         </Card>
 
         {/* Course List */}
-        {filteredCourses.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Spin size="large" tip="Đang tải khóa học..." />
+          </div>
+        ) : filteredCourses.length === 0 ? (
           <Card className="rounded-2xl border-0 shadow-md">
             <Empty 
-              description="No courses found"
+              description="Không tìm thấy khóa học nào"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             >
               <Link to="/courses">
-                <Button type="primary" className="!bg-[#012643]">Browse Courses</Button>
+                <Button type="primary" className="!bg-[#012643]">Khám phá khóa học</Button>
               </Link>
             </Empty>
           </Card>

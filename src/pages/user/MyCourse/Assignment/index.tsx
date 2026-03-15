@@ -52,15 +52,17 @@ const Assignment: React.FC = () => {
     isViewModalOpen,
     selectedAssignment,
     stats,
+    isLoading,
     getStatusConfig,
     handleCreate,
     handleEdit,
     handleView,
     handleDelete,
     handleSubmit,
+    handleSubmitAssignment,
     closeModal,
     closeViewModal,
-  } = useAssignment();
+  } = useAssignment(id!);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -174,8 +176,8 @@ const Assignment: React.FC = () => {
             </>
           )}
           {userRole === 'student' && record.status === 'pending' && (
-            <Button type="primary" size="small" className="!bg-[#012643] !rounded-lg">
-              Submit
+            <Button type="primary" size="small" className="!bg-[#012643] !rounded-lg" onClick={() => handleSubmitAssignment(record.id, '')}>
+              Nộp bài
             </Button>
           )}
         </Space>
@@ -190,10 +192,10 @@ const Assignment: React.FC = () => {
         <Breadcrumb 
           className="mb-6"
           items={[
-            { title: <Link to="/"><HomeOutlined /> Home</Link> },
-            { title: <Link to="/my-course">My Courses</Link> },
-            { title: <Link to={`/my-course/detail/${id}`}>Course Detail</Link> },
-            { title: 'Assignments' },
+            { title: <Link to="/"><HomeOutlined /> Trang chủ</Link> },
+            { title: <Link to="/my-course">Khóa học của tôi</Link> },
+            { title: <Link to={`/my-course/detail/${id}`}>Chi tiết khóa học</Link> },
+            { title: 'Bài tập' },
           ]}
         />
 
@@ -202,10 +204,10 @@ const Assignment: React.FC = () => {
           <div>
             <Title level={2} className="!text-[#012643] !mb-1 flex items-center gap-3">
               <FileTextOutlined className="text-orange-500" />
-              Assignments
+              Bài tập
             </Title>
             <Text className="text-gray-500">
-              {userRole === 'teacher' ? 'Create and manage course assignments' : 'View and submit your assignments'}
+              {userRole === 'teacher' ? 'Tạo và quản lý bài tập khóa học' : 'Xem và nộp bài tập'}
             </Text>
           </div>
           {userRole === 'teacher' && (
@@ -215,7 +217,7 @@ const Assignment: React.FC = () => {
               onClick={onCreate}
               className="!bg-[#012643] !border-[#012643] !rounded-lg"
             >
-              Create Assignment
+              Tạo bài tập
             </Button>
           )}
         </div>
@@ -226,7 +228,7 @@ const Assignment: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#012643]">{stats.total}</div>
-                <div className="text-gray-500 text-sm">Total</div>
+                <div className="text-gray-500 text-sm">Tổng</div>
               </div>
             </Card>
           </Col>
@@ -234,7 +236,7 @@ const Assignment: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-500">{stats.pending}</div>
-                <div className="text-gray-500 text-sm">Pending</div>
+                <div className="text-gray-500 text-sm">Chờ nộp</div>
               </div>
             </Card>
           </Col>
@@ -242,7 +244,7 @@ const Assignment: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-500">{stats.submitted}</div>
-                <div className="text-gray-500 text-sm">Submitted</div>
+                <div className="text-gray-500 text-sm">Đã nộp</div>
               </div>
             </Card>
           </Col>
@@ -250,7 +252,7 @@ const Assignment: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-500">{stats.graded}</div>
-                <div className="text-gray-500 text-sm">Graded</div>
+                <div className="text-gray-500 text-sm">Đã chấm</div>
               </div>
             </Card>
           </Col>
@@ -258,7 +260,7 @@ const Assignment: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-500">{stats.overdue}</div>
-                <div className="text-gray-500 text-sm">Overdue</div>
+                <div className="text-gray-500 text-sm">Quá hạn</div>
               </div>
             </Card>
           </Col>
@@ -268,7 +270,7 @@ const Assignment: React.FC = () => {
         <Card className="rounded-2xl border-0 shadow-md">
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <Input
-              placeholder="Search assignments..."
+              placeholder="Tìm bài tập..."
               prefix={<SearchOutlined className="text-gray-400" />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -280,11 +282,11 @@ const Assignment: React.FC = () => {
               onChange={setFilterStatus}
               className="sm:!w-40"
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'submitted', label: 'Submitted' },
-                { value: 'graded', label: 'Graded' },
-                { value: 'overdue', label: 'Overdue' },
+                { value: 'all', label: 'Tất cả' },
+                { value: 'pending', label: 'Chờ nộp' },
+                { value: 'submitted', label: 'Đã nộp' },
+                { value: 'graded', label: 'Đã chấm' },
+                { value: 'overdue', label: 'Quá hạn' },
               ]}
             />
           </div>
@@ -293,14 +295,14 @@ const Assignment: React.FC = () => {
             columns={columns}
             dataSource={filteredAssignments}
             rowKey="id"
+            loading={isLoading}
             pagination={{ pageSize: 10 }}
-            className="custom-table"
           />
         </Card>
 
         {/* Create/Edit Modal */}
         <Modal
-          title={selectedAssignment ? 'Edit Assignment' : 'Create New Assignment'}
+          title={selectedAssignment ? 'Sửa bài tập' : 'Tạo bài tập mới'}
           open={isModalOpen}
           onCancel={closeModal}
           footer={null}
@@ -309,26 +311,26 @@ const Assignment: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={onSubmit}>
             <Form.Item
               name="title"
-              label="Title"
-              rules={[{ required: true, message: 'Please enter title' }]}
+              label="Tiêu đề"
+              rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
             >
-              <Input placeholder="Assignment title" />
+              <Input placeholder="Tiêu đề bài tập" />
             </Form.Item>
 
             <Form.Item
               name="description"
-              label="Description"
-              rules={[{ required: true, message: 'Please enter description' }]}
+              label="Mô tả"
+              rules={[{ required: true, message: 'Vui lòng nhập mô tả' }]}
             >
-              <TextArea rows={4} placeholder="Describe the assignment..." />
+              <TextArea rows={4} placeholder="Mô tả bài tập..." />
             </Form.Item>
 
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   name="dueDate"
-                  label="Due Date"
-                  rules={[{ required: true, message: 'Please select due date' }]}
+                  label="Hạn nộp"
+                  rules={[{ required: true, message: 'Vui lòng chọn hạn nộp' }]}
                 >
                   <Input type="date" />
                 </Form.Item>
@@ -336,24 +338,24 @@ const Assignment: React.FC = () => {
               <Col span={12}>
                 <Form.Item
                   name="maxGrade"
-                  label="Maximum Grade"
-                  rules={[{ required: true, message: 'Please enter max grade' }]}
+                  label="Điểm tối đa"
+                  rules={[{ required: true, message: 'Vui lòng nhập điểm tối đa' }]}
                 >
                   <Input type="number" placeholder="100" />
                 </Form.Item>
               </Col>
             </Row>
 
-            <Form.Item label="Attachments">
+            <Form.Item label="Tệp đính kèm">
               <Upload>
-                <Button icon={<UploadOutlined />}>Upload Files</Button>
+                <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
               </Upload>
             </Form.Item>
 
             <div className="flex justify-end gap-3 mt-6">
-              <Button onClick={closeModal}>Cancel</Button>
+              <Button onClick={closeModal}>Hủy</Button>
               <Button type="primary" htmlType="submit" className="!bg-[#012643]">
-                {selectedAssignment ? 'Update' : 'Create'}
+                {selectedAssignment ? 'Cập nhật' : 'Tạo mới'}
               </Button>
             </div>
           </Form>
@@ -361,13 +363,13 @@ const Assignment: React.FC = () => {
 
         {/* View Modal */}
         <Modal
-          title="Assignment Details"
+          title="Chi tiết bài tập"
           open={isViewModalOpen}
           onCancel={closeViewModal}
           footer={[
-            <Button key="close" onClick={closeViewModal}>Close</Button>,
+            <Button key="close" onClick={closeViewModal}>Đóng</Button>,
             userRole === 'student' && selectedAssignment?.status === 'pending' && (
-              <Button key="submit" type="primary" className="!bg-[#012643]">Submit Assignment</Button>
+              <Button key="submit" type="primary" className="!bg-[#012643]" onClick={() => selectedAssignment && handleSubmitAssignment(selectedAssignment.id, '')}>Nộp bài tập</Button>
             )
           ]}
           width={600}
@@ -375,26 +377,26 @@ const Assignment: React.FC = () => {
           {selectedAssignment && (
             <div className="space-y-4">
               <div>
-                <Text className="text-gray-500 text-sm">Title</Text>
+                <Text className="text-gray-500 text-sm">Tiêu đề</Text>
                 <Title level={4} className="!mt-1 !mb-0">{selectedAssignment.title}</Title>
               </div>
               <div>
-                <Text className="text-gray-500 text-sm">Description</Text>
+                <Text className="text-gray-500 text-sm">Mô tả</Text>
                 <Paragraph className="!mt-1 !mb-0">{selectedAssignment.description}</Paragraph>
               </div>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Text className="text-gray-500 text-sm">Due Date</Text>
+                  <Text className="text-gray-500 text-sm">Hạn nộp</Text>
                   <div className="font-semibold">{selectedAssignment.dueDate}</div>
                 </Col>
                 <Col span={12}>
-                  <Text className="text-gray-500 text-sm">Status</Text>
+                  <Text className="text-gray-500 text-sm">Trạng thái</Text>
                   <div>{getStatusConfig(selectedAssignment.status).text}</div>
                 </Col>
               </Row>
               {selectedAssignment.grade !== undefined && (
                 <div>
-                  <Text className="text-gray-500 text-sm">Grade</Text>
+                  <Text className="text-gray-500 text-sm">Điểm</Text>
                   <div className="text-2xl font-bold text-green-500">
                     {selectedAssignment.grade}/{selectedAssignment.maxGrade}
                   </div>
@@ -402,7 +404,7 @@ const Assignment: React.FC = () => {
               )}
               {selectedAssignment.feedback && (
                 <div>
-                  <Text className="text-gray-500 text-sm">Feedback</Text>
+                  <Text className="text-gray-500 text-sm">Phản hồi</Text>
                   <Card className="mt-1 bg-green-50 border-green-200">
                     <Paragraph className="!mb-0">{selectedAssignment.feedback}</Paragraph>
                   </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Card, 
   Tabs, 
@@ -11,12 +11,13 @@ import {
   Row, 
   Col,
   Tag,
-  message,
   Modal,
   Table,
   Upload,
   Timeline,
-  Empty
+  Empty,
+  Spin,
+  DatePicker
 } from 'antd';
 import { 
   UserOutlined, 
@@ -36,16 +37,11 @@ import {
   EnvironmentOutlined,
   DownloadOutlined,
   EyeOutlined,
-  PlusOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  SyncOutlined
+  PlusOutlined
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { useProfile } from '../../../hooks/useProfile';
 import { 
-  MOCK_USER_PROFILE, 
-  MOCK_ACHIEVEMENTS, 
-  MOCK_CERTIFICATES, 
-  MOCK_SUPPORT_TICKETS,
   SUPPORT_CATEGORIES,
   TICKET_PRIORITIES
 } from '../../../constants/profileData';
@@ -55,55 +51,80 @@ const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const Profile: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('info');
-  const [profile, setProfile] = useState(MOCK_USER_PROFILE);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const {
+    activeTab,
+    setActiveTab,
+    profile,
+    isLoading,
+    isUpdating,
+    isCreatingTicket,
+    isEditModalOpen,
+    isPasswordModalOpen,
+    isTicketModalOpen,
+    selectedTicket,
+    setSelectedTicket,
+    achievements,
+    certificates,
+    supportTickets,
+    handleEditProfile,
+    handleSaveProfile,
+    handleChangePassword,
+    handleCreateTicket,
+    getTicketStatusConfig,
+    closeEditModal,
+    closePasswordModal,
+    closeTicketModal,
+    openPasswordModal,
+    openTicketModal,
+    clearSelectedTicket,
+  } = useProfile();
+
   const [editForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [ticketForm] = Form.useForm();
 
-  const handleEditProfile = () => {
-    editForm.setFieldsValue(profile);
-    setIsEditModalOpen(true);
+  const onEditProfile = () => {
+    if (profile) {
+      editForm.setFieldsValue({
+        ...profile,
+        dateOfBirth: profile.dateOfBirth ? dayjs(profile.dateOfBirth) : undefined,
+      });
+    }
+    handleEditProfile();
   };
 
-  const handleSaveProfile = (values: any) => {
-    setProfile({ ...profile, ...values });
-    message.success('Profile updated successfully!');
-    setIsEditModalOpen(false);
+  const onSaveProfile = (values: Record<string, unknown>) => {
+    const dateOfBirth = values.dateOfBirth 
+      ? (values.dateOfBirth as dayjs.Dayjs).format('YYYY-MM-DD') 
+      : undefined;
+    handleSaveProfile({ ...values, dateOfBirth });
   };
 
-  const handleChangePassword = (values: any) => {
-    console.log('Password change:', values);
-    message.success('Password changed successfully!');
-    setIsPasswordModalOpen(false);
+  const onChangePassword = (values: Record<string, unknown>) => {
+    handleChangePassword(values);
     passwordForm.resetFields();
   };
 
-  const handleCreateTicket = (values: any) => {
-    console.log('New ticket:', values);
-    message.success('Support ticket submitted successfully!');
-    setIsTicketModalOpen(false);
+  const onCreateTicket = (values: { subject: string; description: string; category: string; priority?: string }) => {
+    handleCreateTicket(values);
     ticketForm.resetFields();
   };
 
-  const getTicketStatusConfig = (status: string) => {
-    switch (status) {
-      case 'open':
-        return { color: 'blue', icon: <ClockCircleOutlined />, text: 'Open' };
-      case 'in-progress':
-        return { color: 'orange', icon: <SyncOutlined spin />, text: 'In Progress' };
-      case 'resolved':
-        return { color: 'green', icon: <CheckCircleOutlined />, text: 'Resolved' };
-      case 'closed':
-        return { color: 'default', icon: <CheckCircleOutlined />, text: 'Closed' };
-      default:
-        return { color: 'default', icon: null, text: status };
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Empty description="Vui lòng đăng nhập để xem hồ sơ" />
+      </div>
+    );
+  }
 
   const ticketColumns = [
     {
@@ -225,7 +246,7 @@ const Profile: React.FC = () => {
                   <Button 
                     type="primary" 
                     icon={<EditOutlined />}
-                    onClick={handleEditProfile}
+                    onClick={onEditProfile}
                     className="!bg-white !text-[#012643] !border-0 hover:!bg-gray-100"
                   >
                     Edit Profile
@@ -274,7 +295,7 @@ const Profile: React.FC = () => {
                     <CalendarOutlined className="text-[#e5698e] text-lg" />
                     <div>
                       <Text className="text-gray-500 text-xs block">Member Since</Text>
-                      <Text className="font-medium">{new Date(profile.joinedDate).toLocaleDateString()}</Text>
+                      <Text className="font-medium">{profile?.joinDate ? new Date(profile.joinDate).toLocaleDateString() : ''}</Text>
                     </div>
                   </div>
                 </div>
@@ -296,7 +317,7 @@ const Profile: React.FC = () => {
               </div>
               <Button 
                 icon={<LockOutlined />}
-                onClick={() => setIsPasswordModalOpen(true)}
+                onClick={openPasswordModal}
               >
                 Change Password
               </Button>
@@ -321,7 +342,7 @@ const Profile: React.FC = () => {
               <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-orange-50">
                 <div className="text-center">
                   <div className="text-3xl mb-2">🏆</div>
-                  <div className="text-2xl font-bold text-[#012643]">{MOCK_ACHIEVEMENTS.length}</div>
+                  <div className="text-2xl font-bold text-[#012643]">{achievements.length}</div>
                   <div className="text-gray-500 text-sm">Achievements</div>
                 </div>
               </Card>
@@ -330,7 +351,7 @@ const Profile: React.FC = () => {
               <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-green-50 to-emerald-50">
                 <div className="text-center">
                   <div className="text-3xl mb-2">📜</div>
-                  <div className="text-2xl font-bold text-[#012643]">{MOCK_CERTIFICATES.length}</div>
+                  <div className="text-2xl font-bold text-[#012643]">{certificates.length}</div>
                   <div className="text-gray-500 text-sm">Certificates</div>
                 </div>
               </Card>
@@ -358,24 +379,28 @@ const Profile: React.FC = () => {
           {/* Achievements Grid */}
           <Card className="rounded-2xl border-0 shadow-md">
             <Title level={4} className="!text-[#012643] !mb-4">🏆 My Achievements</Title>
-            <Row gutter={[16, 16]}>
-              {MOCK_ACHIEVEMENTS.map(achievement => (
-                <Col xs={24} sm={12} md={8} key={achievement.id}>
-                  <Card className="rounded-xl border border-gray-100 hover:shadow-md transition-all h-full">
-                    <div className="text-center">
-                      <div className="text-4xl mb-3">{achievement.icon}</div>
-                      <Text className="font-semibold text-[#012643] block">{achievement.title}</Text>
-                      <Text className="text-gray-500 text-sm">{achievement.description}</Text>
-                      <div className="mt-2">
-                        <Tag color="blue" className="!rounded-full !text-xs">
-                          {new Date(achievement.earnedAt).toLocaleDateString()}
-                        </Tag>
+            {achievements.length === 0 ? (
+              <Empty description="Chưa có thành tựu nào. Hãy hoàn thành khóa học để nhận!" />
+            ) : (
+              <Row gutter={[16, 16]}>
+                {achievements.map(achievement => (
+                  <Col xs={24} sm={12} md={8} key={achievement.id}>
+                    <Card className="rounded-xl border border-gray-100 hover:shadow-md transition-all h-full">
+                      <div className="text-center">
+                        <div className="text-4xl mb-3">{achievement.icon}</div>
+                        <Text className="font-semibold text-[#012643] block">{achievement.title}</Text>
+                        <Text className="text-gray-500 text-sm">{achievement.description}</Text>
+                        <div className="mt-2">
+                          <Tag color="blue" className="!rounded-full !text-xs">
+                            {new Date(achievement.earnedAt).toLocaleDateString()}
+                          </Tag>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            )}
           </Card>
         </div>
       ),
@@ -391,11 +416,11 @@ const Profile: React.FC = () => {
       children: (
         <Card className="rounded-2xl border-0 shadow-md">
           <Title level={4} className="!text-[#012643] !mb-4">📜 My Certificates</Title>
-          {MOCK_CERTIFICATES.length === 0 ? (
-            <Empty description="No certificates yet. Complete a course to earn your first certificate!" />
+          {certificates.length === 0 ? (
+            <Empty description="Chưa có chứng chỉ nào. Hãy hoàn thành khóa học để nhận chứng chỉ đầu tiên!" />
           ) : (
             <Row gutter={[16, 16]}>
-              {MOCK_CERTIFICATES.map(cert => (
+              {certificates.map(cert => (
                 <Col xs={24} md={12} key={cert.id}>
                   <Card className="rounded-xl border border-gray-100 hover:shadow-md transition-all">
                     <div className="flex items-start gap-4">
@@ -450,7 +475,7 @@ const Profile: React.FC = () => {
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />}
-                onClick={() => setIsTicketModalOpen(true)}
+                onClick={openTicketModal}
                 className="!bg-[#012643] !rounded-lg"
               >
                 New Ticket
@@ -459,7 +484,7 @@ const Profile: React.FC = () => {
 
             <Table
               columns={ticketColumns}
-              dataSource={MOCK_SUPPORT_TICKETS}
+              dataSource={supportTickets}
               rowKey="id"
               pagination={{ pageSize: 5 }}
             />
@@ -481,91 +506,107 @@ const Profile: React.FC = () => {
 
         {/* Edit Profile Modal */}
         <Modal
-          title="Edit Profile"
+          title="Chỉnh sửa hồ sơ"
           open={isEditModalOpen}
-          onCancel={() => setIsEditModalOpen(false)}
+          onCancel={closeEditModal}
           footer={null}
           width={600}
         >
-          <Form form={editForm} layout="vertical" onFinish={handleSaveProfile}>
+          <Form form={editForm} layout="vertical" onFinish={onSaveProfile}>
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="firstName" label="First Name" rules={[{ required: true }]}>
+                <Form.Item name="firstName" label="Họ" rules={[{ required: true, message: 'Vui lòng nhập họ' }]}>
                   <Input />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]}>
+                <Form.Item name="lastName" label="Tên" rules={[{ required: true, message: 'Vui lòng nhập tên' }]}>
                   <Input />
                 </Form.Item>
               </Col>
             </Row>
-            <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
-              <Input prefix={<MailOutlined />} />
-            </Form.Item>
-            <Form.Item name="phone" label="Phone">
+            <Form.Item name="phone" label="Số điện thoại">
               <Input prefix={<PhoneOutlined />} />
-            </Form.Item>
-            <Form.Item name="bio" label="Bio">
-              <TextArea rows={3} />
             </Form.Item>
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="city" label="City">
+                <Form.Item name="gender" label="Giới tính">
+                  <Select options={[
+                    { value: 'male', label: 'Nam' },
+                    { value: 'female', label: 'Nữ' },
+                    { value: 'other', label: 'Khác' },
+                  ]} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="dateOfBirth" label="Ngày sinh">
+                  <DatePicker className="w-full" format="DD/MM/YYYY" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item name="bio" label="Giới thiệu">
+              <TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="address" label="Địa chỉ">
+              <Input prefix={<EnvironmentOutlined />} />
+            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="city" label="Thành phố">
                   <Input />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="country" label="Country">
+                <Form.Item name="country" label="Quốc gia">
                   <Input />
                 </Form.Item>
               </Col>
             </Row>
             <div className="flex justify-end gap-3">
-              <Button onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit" className="!bg-[#012643]">Save Changes</Button>
+              <Button onClick={closeEditModal}>Hủy</Button>
+              <Button type="primary" htmlType="submit" loading={isUpdating} className="!bg-[#012643]">Lưu thay đổi</Button>
             </div>
           </Form>
         </Modal>
 
         {/* Change Password Modal */}
         <Modal
-          title="Change Password"
+          title="Đổi mật khẩu"
           open={isPasswordModalOpen}
-          onCancel={() => setIsPasswordModalOpen(false)}
+          onCancel={closePasswordModal}
           footer={null}
           width={400}
         >
-          <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword}>
+          <Form form={passwordForm} layout="vertical" onFinish={onChangePassword}>
             <Form.Item 
               name="currentPassword" 
-              label="Current Password" 
-              rules={[{ required: true }]}
+              label="Mật khẩu hiện tại" 
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu hiện tại' }]}
             >
               <Input.Password />
             </Form.Item>
             <Form.Item 
               name="newPassword" 
-              label="New Password" 
+              label="Mật khẩu mới" 
               rules={[
-                { required: true },
-                { min: 8, message: 'Password must be at least 8 characters' }
+                { required: true, message: 'Vui lòng nhập mật khẩu mới' },
+                { min: 8, message: 'Mật khẩu phải có ít nhất 8 ký tự' }
               ]}
             >
               <Input.Password />
             </Form.Item>
             <Form.Item 
               name="confirmPassword" 
-              label="Confirm Password" 
+              label="Xác nhận mật khẩu" 
               dependencies={['newPassword']}
               rules={[
-                { required: true },
+                { required: true, message: 'Vui lòng xác nhận mật khẩu' },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
                     if (!value || getFieldValue('newPassword') === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error('Passwords do not match'));
+                    return Promise.reject(new Error('Mật khẩu xác nhận không khớp'));
                   },
                 }),
               ]}
@@ -573,42 +614,42 @@ const Profile: React.FC = () => {
               <Input.Password />
             </Form.Item>
             <div className="flex justify-end gap-3">
-              <Button onClick={() => setIsPasswordModalOpen(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit" className="!bg-[#012643]">Change Password</Button>
+              <Button onClick={closePasswordModal}>Hủy</Button>
+              <Button type="primary" htmlType="submit" className="!bg-[#012643]">Đổi mật khẩu</Button>
             </div>
           </Form>
         </Modal>
 
         {/* Create Ticket Modal */}
         <Modal
-          title="Create Support Ticket"
+          title="Tạo ticket hỗ trợ"
           open={isTicketModalOpen}
-          onCancel={() => setIsTicketModalOpen(false)}
+          onCancel={closeTicketModal}
           footer={null}
           width={500}
         >
-          <Form form={ticketForm} layout="vertical" onFinish={handleCreateTicket}>
-            <Form.Item name="subject" label="Subject" rules={[{ required: true }]}>
-              <Input placeholder="Brief description of your issue" />
+          <Form form={ticketForm} layout="vertical" onFinish={onCreateTicket}>
+            <Form.Item name="subject" label="Tiêu đề" rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}>
+              <Input placeholder="Mô tả ngắn vấn đề của bạn" />
             </Form.Item>
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="category" label="Category" rules={[{ required: true }]}>
-                  <Select options={SUPPORT_CATEGORIES} placeholder="Select category" />
+                <Form.Item name="category" label="Danh mục" rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}>
+                  <Select options={SUPPORT_CATEGORIES} placeholder="Chọn danh mục" />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="priority" label="Priority" rules={[{ required: true }]}>
-                  <Select options={TICKET_PRIORITIES.map(p => ({ value: p.value, label: p.label }))} placeholder="Select priority" />
+                <Form.Item name="priority" label="Mức ưu tiên" rules={[{ required: true, message: 'Vui lòng chọn mức ưu tiên' }]}>
+                  <Select options={TICKET_PRIORITIES.map(p => ({ value: p.value, label: p.label }))} placeholder="Chọn mức ưu tiên" />
                 </Form.Item>
               </Col>
             </Row>
-            <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-              <TextArea rows={4} placeholder="Please provide details about your issue..." />
+            <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Vui lòng nhập mô tả' }]}>
+              <TextArea rows={4} placeholder="Vui lòng cung cấp chi tiết vấn đề của bạn..." />
             </Form.Item>
             <div className="flex justify-end gap-3">
-              <Button onClick={() => setIsTicketModalOpen(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit" className="!bg-[#012643]">Submit Ticket</Button>
+              <Button onClick={closeTicketModal}>Hủy</Button>
+              <Button type="primary" htmlType="submit" loading={isCreatingTicket} className="!bg-[#012643]">Gửi ticket</Button>
             </div>
           </Form>
         </Modal>
@@ -617,9 +658,9 @@ const Profile: React.FC = () => {
         <Modal
           title={`Ticket: ${selectedTicket?.id}`}
           open={!!selectedTicket}
-          onCancel={() => setSelectedTicket(null)}
+          onCancel={clearSelectedTicket}
           footer={[
-            <Button key="close" onClick={() => setSelectedTicket(null)}>Close</Button>
+            <Button key="close" onClick={clearSelectedTicket}>Đóng</Button>
           ]}
           width={600}
         >
@@ -655,11 +696,11 @@ const Profile: React.FC = () => {
                 <Text className="text-gray-500 text-sm">Description</Text>
                 <Paragraph className="bg-gray-50 p-3 rounded-lg mt-1">{selectedTicket.description}</Paragraph>
               </div>
-              {selectedTicket.responses.length > 0 && (
+              {selectedTicket.responses?.length > 0 && (
                 <div>
                   <Text className="text-gray-500 text-sm">Responses</Text>
                   <Timeline className="mt-2">
-                    {selectedTicket.responses.map(response => (
+                    {selectedTicket.responses?.map(response => (
                       <Timeline.Item 
                         key={response.id}
                         color={response.isStaff ? 'blue' : 'green'}

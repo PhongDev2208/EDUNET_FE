@@ -17,7 +17,8 @@ import {
   Tooltip,
   Row,
   Col,
-  Dropdown
+  Dropdown,
+  Spin
 } from 'antd';
 import { 
   UserOutlined, 
@@ -53,13 +54,14 @@ const Classroom: React.FC = () => {
     isModalOpen,
     editingMember,
     stats,
+    isLoading,
     getRoleConfig,
     handleAddMember,
     handleEditMember,
     handleDeleteMember,
     handleSubmit,
     closeModal,
-  } = useClassroom();
+  } = useClassroom(id!);
 
   const onAddMember = () => {
     form.resetFields();
@@ -193,10 +195,10 @@ const Classroom: React.FC = () => {
         <Breadcrumb 
           className="mb-6"
           items={[
-            { title: <Link to="/"><HomeOutlined /> Home</Link> },
-            { title: <Link to="/my-course">My Courses</Link> },
-            { title: <Link to={`/my-course/detail/${id}`}>Course Detail</Link> },
-            { title: 'Classroom' },
+            { title: <Link to="/"><HomeOutlined /> Trang chủ</Link> },
+            { title: <Link to="/my-course">Khóa học của tôi</Link> },
+            { title: <Link to={`/my-course/detail/${id}`}>Chi tiết khóa học</Link> },
+            { title: 'Lớp học' },
           ]}
         />
 
@@ -205,21 +207,21 @@ const Classroom: React.FC = () => {
           <div>
             <Title level={2} className="!text-[#012643] !mb-1 flex items-center gap-3">
               <TeamOutlined className="text-blue-500" />
-              Classroom Members
+              Thành viên lớp học
             </Title>
-            <Text className="text-gray-500">Manage and view all class participants</Text>
+            <Text className="text-gray-500">Quản lý và xem tất cả thành viên lớp học</Text>
           </div>
           {userRole === 'teacher' && (
             <div className="flex gap-3">
               <Dropdown
                 menu={{
                   items: [
-                    { key: 'export', label: 'Export Members', icon: <ExportOutlined /> },
-                    { key: 'invite', label: 'Invite via Link', icon: <UserAddOutlined /> },
+                    { key: 'export', label: 'Xuất danh sách', icon: <ExportOutlined /> },
+                    { key: 'invite', label: 'Mời qua liên kết', icon: <UserAddOutlined /> },
                   ]
                 }}
               >
-                <Button icon={<MoreOutlined />} className="!rounded-lg">More</Button>
+                <Button icon={<MoreOutlined />} className="!rounded-lg">Khác</Button>
               </Dropdown>
               <Button 
                 type="primary" 
@@ -227,7 +229,7 @@ const Classroom: React.FC = () => {
                 onClick={onAddMember}
                 className="!bg-[#012643] !border-[#012643] !rounded-lg"
               >
-                Add Member
+                Thêm thành viên
               </Button>
             </div>
           )}
@@ -239,7 +241,7 @@ const Classroom: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#012643]">{stats.total}</div>
-                <div className="text-gray-500 text-sm">Total Members</div>
+                <div className="text-gray-500 text-sm">Tổng thành viên</div>
               </div>
             </Card>
           </Col>
@@ -247,7 +249,7 @@ const Classroom: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-500">{stats.teachers}</div>
-                <div className="text-gray-500 text-sm">Instructors</div>
+                <div className="text-gray-500 text-sm">Giảng viên</div>
               </div>
             </Card>
           </Col>
@@ -255,7 +257,7 @@ const Classroom: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-500">{stats.students}</div>
-                <div className="text-gray-500 text-sm">Students</div>
+                <div className="text-gray-500 text-sm">Học viên</div>
               </div>
             </Card>
           </Col>
@@ -263,7 +265,7 @@ const Classroom: React.FC = () => {
             <Card className="rounded-xl border-0 shadow-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-500">{stats.active}</div>
-                <div className="text-gray-500 text-sm">Active</div>
+                <div className="text-gray-500 text-sm">Hoạt động</div>
               </div>
             </Card>
           </Col>
@@ -273,7 +275,7 @@ const Classroom: React.FC = () => {
         <Card className="rounded-2xl border-0 shadow-md">
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Tìm theo tên hoặc email..."
               prefix={<SearchOutlined className="text-gray-400" />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -285,10 +287,10 @@ const Classroom: React.FC = () => {
               onChange={setFilterRole}
               className="sm:!w-40"
               options={[
-                { value: 'all', label: 'All Roles' },
-                { value: 'teacher', label: 'Instructor' },
-                { value: 'assistant', label: 'Assistant' },
-                { value: 'student', label: 'Student' },
+                { value: 'all', label: 'Tất cả' },
+                { value: 'teacher', label: 'Giảng viên' },
+                { value: 'assistant', label: 'Trợ giảng' },
+                { value: 'student', label: 'Học viên' },
               ]}
             />
           </div>
@@ -297,14 +299,15 @@ const Classroom: React.FC = () => {
             columns={columns}
             dataSource={filteredMembers}
             rowKey="id"
-            pagination={{ pageSize: 10, showTotal: (total) => `${total} members` }}
+            pagination={{ pageSize: 10, showTotal: (total) => `${total} thành viên` }}
+            loading={isLoading}
             className="custom-table"
           />
         </Card>
 
         {/* Add/Edit Modal */}
         <Modal
-          title={editingMember ? 'Edit Member' : 'Add New Member'}
+          title={editingMember ? 'Sửa thành viên' : 'Thêm thành viên mới'}
           open={isModalOpen}
           onCancel={closeModal}
           footer={null}
@@ -313,18 +316,18 @@ const Classroom: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={onSubmit}>
             <Form.Item
               name="name"
-              label="Full Name"
-              rules={[{ required: true, message: 'Please enter name' }]}
+              label="Họ và tên"
+              rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
             >
               <Input prefix={<UserOutlined />} placeholder="John Doe" />
             </Form.Item>
 
             <Form.Item
               name="email"
-              label="Email Address"
+              label="Địa chỉ email"
               rules={[
-                { required: true, message: 'Please enter email' },
-                { type: 'email', message: 'Please enter valid email' }
+                { required: true, message: 'Vui lòng nhập email' },
+                { type: 'email', message: 'Email không hợp lệ' }
               ]}
             >
               <Input prefix={<MailOutlined />} placeholder="john@example.com" />
@@ -332,15 +335,15 @@ const Classroom: React.FC = () => {
 
             <Form.Item
               name="role"
-              label="Role"
-              rules={[{ required: true, message: 'Please select role' }]}
+              label="Vai trò"
+              rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
             >
               <Select
                 options={[
-                  { value: 'student', label: 'Student' },
-                  { value: 'assistant', label: 'Assistant' },
+                  { value: 'student', label: 'Học viên' },
+                  { value: 'assistant', label: 'Trợ giảng' },
                 ]}
-                placeholder="Select role"
+                placeholder="Chọn vai trò"
               />
             </Form.Item>
 
@@ -352,9 +355,9 @@ const Classroom: React.FC = () => {
             </Form.Item>
 
             <div className="flex justify-end gap-3 mt-6">
-              <Button onClick={closeModal}>Cancel</Button>
+              <Button onClick={closeModal}>Hủy</Button>
               <Button type="primary" htmlType="submit" className="!bg-[#012643]">
-                {editingMember ? 'Update' : 'Add Member'}
+                {editingMember ? 'Cập nhật' : 'Thêm thành viên'}
               </Button>
             </div>
           </Form>
