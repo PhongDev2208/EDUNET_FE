@@ -82,9 +82,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="h-screen flex bg-gradient-to-br from-gray-50 to-blue-50 overflow-hidden">
       {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-[#012643] via-[#01385f] to-[#012643] items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#012643] via-[#01385f] to-[#012643] items-center justify-center relative overflow-hidden">
         {/* Animated Background Elements */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#17EAD9] rounded-full opacity-10 -translate-y-1/2 translate-x-1/2 blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#e5698e] rounded-full opacity-10 translate-y-1/2 -translate-x-1/2 blur-3xl animate-pulse delay-700"></div>
@@ -100,26 +100,26 @@ const Login: React.FC = () => {
         <div className="absolute bottom-32 right-20 w-3 h-3 bg-[#e5698e] rounded-full animate-bounce delay-300"></div>
         <div className="absolute top-1/3 left-16 w-2 h-2 bg-yellow-400 rounded-full animate-bounce delay-500"></div>
 
-        <div className="z-10 text-center p-12 max-w-lg">
-          <div className="mb-8 relative inline-block">
+        <div className="z-10 text-center p-8 max-w-lg">
+          <div className="mb-5 relative inline-block">
             <div className="absolute inset-0 bg-gradient-to-r from-[#17EAD9] to-[#6078EA] rounded-full blur-2xl opacity-30 animate-pulse"></div>
-            <img src={Logo} alt="EduNet" className="w-28 h-28 rounded-2xl shadow-2xl relative z-10 border-4 border-white/10" />
+            <img src={Logo} alt="EduNet" className="w-20 h-20 rounded-2xl shadow-2xl relative z-10 border-4 border-white/10" />
           </div>
-          <Title level={1} className="!text-white !mb-4 !text-4xl !font-bold">
+          <Title level={2} className="!text-white !mb-3 !text-3xl !font-bold">
             Chào mừng trở lại <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#17EAD9] to-[#6078EA]">EduNet</span>
           </Title>
-          <Paragraph className="text-blue-200 text-lg mb-10">
+          <Paragraph className="text-blue-200 text-base mb-6">
             Cổng thông tin giáo dục đẳng cấp. Tiếp tục hành trình học tập với hàng nghìn khóa học và giảng viên chuyên gia.
           </Paragraph>
           
           {/* Features */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {features.map((feature, index) => (
               <div 
                 key={index} 
-                className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300"
+                className="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-300"
               >
-                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-2xl">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl">
                   {feature.icon}
                 </div>
                 <Text className="text-white/90 font-medium">{feature.text}</Text>
@@ -130,19 +130,19 @@ const Login: React.FC = () => {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-[45%] flex items-center justify-center p-6 md:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-6 overflow-y-auto">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="text-center mb-6 lg:hidden">
-            <img src={Logo} alt="EduNet" className="w-16 h-16 rounded-xl mb-3 mx-auto shadow-lg" />
-            <Title level={3} className="!text-[#012643] !mb-0">EduNet</Title>
+          <div className="text-center mb-3 lg:hidden">
+            <img src={Logo} alt="EduNet" className="w-12 h-12 rounded-xl mb-2 mx-auto shadow-lg" />
+            <Title level={4} className="!text-[#012643] !mb-0">EduNet</Title>
           </div>
 
           {/* Form Card */}
-          <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-gray-100">
-            <div className="mb-8">
-              <Title level={2} className="!text-[#012643] !mb-2 !text-2xl">Đăng nhập</Title>
-              <Text className="text-gray-500">Chào mừng trở lại! Vui lòng nhập thông tin của bạn.</Text>
+          <div className="bg-white p-5 rounded-3xl shadow-xl border border-gray-100">
+            <div className="mb-4">
+              <Title level={3} className="!text-[#012643] !mb-1 !text-xl">Đăng nhập</Title>
+              <Text className="text-gray-500 text-sm">Chào mừng trở lại! Vui lòng nhập thông tin của bạn.</Text>
             </div>
 
             <Form
@@ -151,29 +151,31 @@ const Login: React.FC = () => {
               className="login-form"
               initialValues={{ remember: true }}
               onFinish={onFinish}
-              size="large"
+              size="middle"
               layout="vertical"
             >
               <Form.Item
                 name="email"
-                label={<span className="text-gray-600 font-medium">Email</span>}
+                label={<span className="text-gray-600 font-medium text-sm">Email</span>}
                 rules={[{ required: true, message: 'Vui lòng nhập Email!' }]}
+                className="!mb-3"
               >
                 <Input 
                   prefix={<MailOutlined className="text-gray-400" />} 
                   placeholder="Nhập email của bạn" 
-                  className="!rounded-xl !h-12"
+                  className="!rounded-xl !h-10"
                 />
               </Form.Item>
               <Form.Item
                 name="password"
-                label={<span className="text-gray-600 font-medium">Mật khẩu</span>}
+                label={<span className="text-gray-600 font-medium text-sm">Mật khẩu</span>}
                 rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+                className="!mb-3"
               >
                 <Input.Password
                   prefix={<LockOutlined className="text-gray-400" />}
                   placeholder="Nhập mật khẩu"
-                  className="!rounded-xl !h-12"
+                  className="!rounded-xl !h-10"
                 />
               </Form.Item>
               <Form.Item>
@@ -187,48 +189,48 @@ const Login: React.FC = () => {
                 </div>
               </Form.Item>
 
-              <Form.Item className="mb-4">
+              <Form.Item className="!mb-3">
                 <Button 
                   type="primary" 
                   htmlType="submit" 
                   loading={isLoading}
-                  className="w-full !bg-gradient-to-r from-[#012643] to-[#01385f] !border-none !h-12 !text-base !font-semibold hover:!opacity-90 !rounded-xl shadow-lg shadow-blue-900/20 transition-all"
+                  className="w-full !bg-gradient-to-r from-[#012643] to-[#01385f] !border-none !h-10 !text-sm !font-semibold hover:!opacity-90 !rounded-xl shadow-lg shadow-blue-900/20 transition-all"
                 >
                   Đăng nhập
                 </Button>
               </Form.Item>
 
-              <div className="relative my-6">
+              <div className="relative my-3">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-400">hoặc tiếp tục với</span>
+                  <span className="px-4 bg-white text-gray-400 text-xs">hoặc tiếp tục với</span>
                 </div>
               </div>
 
-              <Form.Item className="mb-6">
+              <Form.Item className="!mb-0">
                 <div className="grid grid-cols-3 gap-3">
                   <Button 
                     onClick={handleGoogleLogin}
                     icon={<GoogleOutlined className="text-red-500" />}
-                    className="!h-12 !rounded-xl !border-gray-200 hover:!border-red-300 hover:!bg-red-50"
+                    className="!h-9 !rounded-xl !border-gray-200 hover:!border-red-300 hover:!bg-red-50"
                   />
                   <Button 
                     icon={<AppleFilled className="text-gray-800" />}
-                    className="!h-12 !rounded-xl !border-gray-200 hover:!border-gray-400 hover:!bg-gray-50"
+                    className="!h-9 !rounded-xl !border-gray-200 hover:!border-gray-400 hover:!bg-gray-50"
                   />
                   <Button 
                     icon={<GithubOutlined className="text-gray-800" />}
-                    className="!h-12 !rounded-xl !border-gray-200 hover:!border-gray-400 hover:!bg-gray-50"
+                    className="!h-9 !rounded-xl !border-gray-200 hover:!border-gray-400 hover:!bg-gray-50"
                   />
                 </div>
               </Form.Item>
             </Form>
 
-            <div className="text-center">
-              <Text className="text-gray-500">Chưa có tài khoản? </Text>
-              <div className="mt-3 flex justify-center gap-4">
+            <div className="text-center mt-3">
+              <Text className="text-gray-500 text-sm">Chưa có tài khoản? </Text>
+              <div className="mt-2 flex justify-center gap-4">
                 <Link to="/auth/register/student" className="text-[#6078EA] font-semibold hover:text-[#4a5db8] transition-colors">
                   Đăng ký học viên
                 </Link>
@@ -241,7 +243,7 @@ const Login: React.FC = () => {
           </div>
 
           {/* Support Section */}
-          <div className="mt-6 text-center">
+          <div className="mt-2 text-center">
             <Button 
               type="text"
               icon={<QuestionCircleOutlined />}
