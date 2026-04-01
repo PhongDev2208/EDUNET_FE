@@ -1,15 +1,17 @@
 import React from 'react';
-import { 
-  Calendar, 
-  Card, 
-  Modal, 
-  Typography, 
-  Tag, 
-  Button, 
-  Row, 
+import {
+  Calendar,
+  Card,
+  Modal,
+  Typography,
+  Tag,
+  Button,
+  Row,
   Col,
   Select,
-  Empty
+  Empty,
+  Spin,
+  Alert,
 } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -20,7 +22,8 @@ import {
   LeftOutlined,
   RightOutlined,
   UserOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { EVENT_TYPE_CONFIG } from '../../../constants/scheduleData';
 import { useSchedule } from '../../../hooks';
@@ -42,6 +45,8 @@ const Schedule: React.FC = () => {
     openEventModal,
     closeModal,
     handleDateSelect,
+    isLoading,
+    isError,
   } = useSchedule();
 
   const dateCellRender = (value: Dayjs) => {
@@ -51,8 +56,8 @@ const Schedule: React.FC = () => {
         {events.slice(0, 3).map((event) => {
           const config = EVENT_TYPE_CONFIG[event.type as keyof typeof EVENT_TYPE_CONFIG];
           return (
-            <li 
-              key={event.id} 
+            <li
+              key={event.id}
               className={`mb-1 text-xs truncate cursor-pointer rounded px-1 py-0.5 ${config.bgColor} ${config.textColor} hover:opacity-80 transition-opacity`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -74,9 +79,32 @@ const Schedule: React.FC = () => {
     handleDateSelect(value);
   };
 
+  // ── Loading state ──────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="py-8 bg-gradient-to-br from-gray-50 to-blue-50/30 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Spin size="large" />
+          <div className="mt-4 text-gray-500">Đang tải lịch học...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-8 bg-gradient-to-br from-gray-50 to-blue-50/30 min-h-screen">
       <div className="container mx-auto px-4 lg:px-6">
+        {/* Error banner — non-blocking, shows above content */}
+        {isError && (
+          <Alert
+            type="warning"
+            message="Không thể tải dữ liệu lịch học từ máy chủ. Vui lòng thử lại sau."
+            showIcon
+            className="mb-4 rounded-xl"
+            closable
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
@@ -90,7 +118,7 @@ const Schedule: React.FC = () => {
             <Select
               value={filterType}
               onChange={setFilterType}
-              className="!w-40"
+              className="!w-44"
               options={[
                 { value: 'all', label: 'Tất cả sự kiện' },
                 { value: 'class', label: 'Lớp học' },
@@ -143,7 +171,7 @@ const Schedule: React.FC = () => {
           {/* Calendar */}
           <Col xs={24} lg={16}>
             <Card className="rounded-2xl border-0 shadow-md">
-              <Calendar 
+              <Calendar
                 cellRender={(date, info) => {
                   if (info.type === 'date') return dateCellRender(date);
                   return info.originNode;
@@ -152,16 +180,16 @@ const Schedule: React.FC = () => {
                 className="custom-calendar"
                 headerRender={({ value, onChange }) => (
                   <div className="flex items-center justify-between mb-4 px-2">
-                    <Button 
-                      type="text" 
+                    <Button
+                      type="text"
                       icon={<LeftOutlined />}
                       onClick={() => onChange(value.subtract(1, 'month'))}
                     />
                     <Title level={4} className="!mb-0 !text-[#012643]">
                       {value.format('MMMM YYYY')}
                     </Title>
-                    <Button 
-                      type="text" 
+                    <Button
+                      type="text"
                       icon={<RightOutlined />}
                       onClick={() => onChange(value.add(1, 'month'))}
                     />
@@ -180,8 +208,8 @@ const Schedule: React.FC = () => {
                 <Tag color="blue" className="!rounded-full">{todayEvents.length} sự kiện</Tag>
               </div>
               {todayEvents.length === 0 ? (
-                <Empty 
-                  description="Không có sự kiện hôm nay" 
+                <Empty
+                  description="Không có sự kiện hôm nay"
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   className="!my-4"
                 />
@@ -200,8 +228,8 @@ const Schedule: React.FC = () => {
                 <Title level={5} className="!mb-0 !text-[#012643]">Sự kiện sắp tới</Title>
               </div>
               {upcomingEvents.length === 0 ? (
-                <Empty 
-                  description="Không có sự kiện sắp tới" 
+                <Empty
+                  description="Không có sự kiện sắp tới"
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   className="!my-4"
                 />
@@ -221,14 +249,26 @@ const Schedule: React.FC = () => {
           title={selectedEvent ? 'Chi tiết sự kiện' : `Sự kiện ngày ${selectedDate.format('DD/MM/YYYY')}`}
           open={isModalOpen}
           onCancel={closeModal}
-          footer={selectedEvent ? [
-            <Button key="close" onClick={closeModal}>Đóng</Button>,
-            selectedEvent.type === 'class' && (
-              <Button key="join" type="primary" icon={<VideoCameraOutlined />} className="!bg-[#012643]">
-                Tham gia lớp
-              </Button>
-            )
-          ] : null}
+          footer={
+            selectedEvent
+              ? [
+                  <Button key="close" onClick={closeModal}>Đóng</Button>,
+                  selectedEvent.type === 'class' && (
+                    <Button
+                      key="join"
+                      type="primary"
+                      icon={<VideoCameraOutlined />}
+                      className="!bg-[#012643]"
+                      href={selectedEvent.meetingLink || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Tham gia lớp
+                    </Button>
+                  ),
+                ]
+              : null
+          }
           width={500}
         >
           {selectedEvent ? (
@@ -236,18 +276,25 @@ const Schedule: React.FC = () => {
               {/* Event Header */}
               <div className={`p-4 rounded-xl ${EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].bgColor}`}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].textColor}`}
-                       style={{ backgroundColor: `${EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].color}20` }}>
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].textColor}`}
+                    style={{ backgroundColor: `${EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].color}20` }}
+                  >
                     {getEventIcon(selectedEvent.type)}
                   </div>
                   <div>
-                    <Tag color={EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].color} className="!rounded-full">
+                    <Tag
+                      color={EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].color}
+                      className="!rounded-full"
+                    >
                       {EVENT_TYPE_CONFIG[selectedEvent.type as keyof typeof EVENT_TYPE_CONFIG].label}
                     </Tag>
                   </div>
                 </div>
                 <Title level={4} className="!mb-1 !text-[#012643]">{selectedEvent.title}</Title>
-                <Text className="text-gray-600">{selectedEvent.courseName}</Text>
+                {selectedEvent.courseName && (
+                  <Text className="text-gray-600">{selectedEvent.courseName}</Text>
+                )}
               </div>
 
               {/* Event Details */}
@@ -270,6 +317,19 @@ const Schedule: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <EnvironmentOutlined className="text-gray-400" />
                     <Text>{selectedEvent.location}</Text>
+                  </div>
+                )}
+                {selectedEvent.meetingLink && (
+                  <div className="flex items-center gap-3">
+                    <LinkOutlined className="text-gray-400" />
+                    <a
+                      href={selectedEvent.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline truncate"
+                    >
+                      {selectedEvent.meetingLink}
+                    </a>
                   </div>
                 )}
               </div>
