@@ -1,35 +1,63 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Steps, Select, message, InputNumber, Upload, Typography } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined, BookOutlined, UploadOutlined, MailOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../../../assets/images/Logo.png';
+import { useRegisterMutation } from '../../../../services/authApi';
+import { setTokens } from '../../../../services/axiosBaseQuery';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
 
 const RegisterTeacher: React.FC = () => {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [form] = Form.useForm();
-  const [formData, setFormData] = useState<any>({});
-  const [fileList, setFileList] = useState<any[]>([]);
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
+  const [fileList, setFileList] = useState<import('antd/es/upload/interface').UploadFile[]>([]);
+  const [register, { isLoading }] = useRegisterMutation();
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: Record<string, unknown>) => {
     const newData = { ...formData, ...values };
     setFormData(newData);
     
     if (current < 2) {
       setCurrent(current + 1);
     } else {
-      console.log('Final Data:', newData);
-      console.log('CV File:', fileList);
-      
-      if (fileList.length === 0) {
-        message.error('Vui lòng tải lên CV của bạn!');
-        return;
-      }
+      // Submit registration to backend API
+      try {
+        const nameParts = (newData.name as string || '').trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
 
-      message.success('Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn sớm.');
-      setCurrent(current + 1);
+        const result = await register({
+          email: newData.email as string,
+          password: newData.password as string,
+          firstName,
+          lastName,
+          phone: (newData.phone as string) || undefined,
+          role: 'teacher',
+        }).unwrap();
+
+        if (result.success && result.data) {
+          setTokens(result.data.accessToken, result.data.refreshToken);
+          message.success('Đăng ký thành công! Đang chuyển hướng...');
+          setCurrent(current + 1);
+          // Redirect to home after showing success step
+          setTimeout(() => navigate('/'), 3000);
+        } else {
+          message.error('Đăng ký thất bại. Vui lòng thử lại.');
+        }
+      } catch (err: unknown) {
+        const errorData = (err as { data?: { message?: string | { errors?: Record<string, string> } } })?.data;
+        let errorMessage = 'Đăng ký thất bại';
+        if (typeof errorData?.message === 'string') {
+          errorMessage = errorData.message;
+        } else if (typeof errorData?.message === 'object' && errorData.message?.errors) {
+          errorMessage = Object.values(errorData.message.errors).join('. ');
+        }
+        message.error(errorMessage);
+      }
     }
   };
 
@@ -53,7 +81,10 @@ const RegisterTeacher: React.FC = () => {
             name="password"
             label="Mật khẩu"
             className="!mb-3"
-            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+            rules={[
+              { required: true, message: 'Vui lòng nhập mật khẩu!' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' },
+            ]}
           >
             <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Tạo mật khẩu" className="!rounded-lg !h-9" />
           </Form.Item>
@@ -136,11 +167,11 @@ const RegisterTeacher: React.FC = () => {
               <Option value="Other">Chứng chỉ chuyên môn khác</Option>
             </Select>
           </Form.Item>
-          <Form.Item label="Tải lên CV/Hồ sơ" className="!mb-0" required>
+          <Form.Item label="Tải lên CV/Hồ sơ (tùy chọn)" className="!mb-0">
             <Upload
               listType="picture-card"
               fileList={fileList}
-              onChange={({ fileList }) => setFileList(fileList)}
+              onChange={({ fileList: newFileList }) => setFileList(newFileList)}
               beforeUpload={() => false}
               maxCount={1}
               className="upload-cv"
@@ -164,13 +195,13 @@ const RegisterTeacher: React.FC = () => {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircleOutlined className="text-5xl text-green-500" />
           </div>
-          <Title level={3} className="!text-green-600 !mb-2">Đơn đăng ký đã được gửi!</Title>
+          <Title level={3} className="!text-green-600 !mb-2">Đăng ký thành công!</Title>
           <Text className="text-gray-500 block mb-6 max-w-sm mx-auto">
-            Cảm ơn bạn đã đăng ký làm giảng viên. Đội ngũ của chúng tôi sẽ xem xét và liên hệ bạn trong vòng 5-7 ngày làm việc.
+            Tài khoản giảng viên của bạn đã được tạo. Bạn sẽ được chuyển hướng đến trang chủ.
           </Text>
-          <Link to="/auth/login">
+          <Link to="/">
             <Button type="primary" size="large" className="!bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-lg !px-8">
-              Đi đến đăng nhập
+              Đi đến trang chủ
             </Button>
           </Link>
         </div>
@@ -246,7 +277,12 @@ const RegisterTeacher: React.FC = () => {
                 )}
                 {current === 0 && <div></div>}
                 
-                <Button type="primary" htmlType="submit" className="!bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-lg !px-8">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={current === 2 && isLoading}
+                  className="!bg-[#012643] !border-[#012643] hover:!bg-[#023e6d] !rounded-lg !px-8"
+                >
                   {current === 2 ? 'Gửi đơn đăng ký' : 'Tiếp tục'}
                 </Button>
               </div>

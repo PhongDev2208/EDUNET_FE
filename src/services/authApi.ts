@@ -12,6 +12,8 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  phone?: string;
+  role?: 'student' | 'teacher';
 }
 
 export interface AuthResponse {
