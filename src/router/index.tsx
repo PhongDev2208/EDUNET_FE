@@ -13,6 +13,7 @@ import Quizz from '../pages/user/MyCourse/Quizz';
 import Practics from '../pages/user/MyCourse/Quizz/Practics';
 import Answer from '../pages/user/MyCourse/Quizz/Answer';
 import DetailAnswer from '../pages/user/MyCourse/Quizz/DetailAnswer';
+import ManageCourse from '../pages/user/MyCourse/ManageCourse';
 import Chat from '../pages/user/Chat';
 import Profile from '../pages/user/Profile';
 import Login from '../pages/auth/Login';
@@ -102,6 +103,10 @@ export const router = createBrowserRouter([
           {
             path: 'quizz/answer/detail/:id',
             element: <DetailAnswer />,
+          },
+          {
+            path: 'manage-course/:id',
+            element: <ManageCourse />,
           },
         ],
       },

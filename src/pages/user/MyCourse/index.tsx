@@ -16,11 +16,21 @@ import {
 import { Link } from 'react-router-dom';
 import { useMyCourse } from '../../../hooks';
 import dayjs from 'dayjs';
+import { useGetProfileQuery } from '../../../services/authApi';
+import TeacherDashboard from './TeacherDashboard';
 
 const { Title, Text } = Typography;
 
 const MyCourse: React.FC = () => {
+  const { data: profileResponse } = useGetProfileQuery();
+  const isTeacher = profileResponse?.data?.role === 'teacher';
+
+  if (isTeacher) {
+    return <TeacherDashboard />;
+  }
+
   const {
+
     viewMode,
     setViewMode,
     filterStatus,
