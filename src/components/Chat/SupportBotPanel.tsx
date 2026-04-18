@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Avatar, Button, Input, Spin, Tag, Typography } from 'antd';
+import React, { useRef, useState } from 'react';
+import { Avatar, Button, Input, Spin, Typography } from 'antd';
 import {
   ArrowLeftOutlined,
   RobotOutlined,
@@ -7,6 +7,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { useAskChatbotMutation } from '../../services/chatbotApi';
+import Badge from '../common/Tag';
 
 const { Text, Title } = Typography;
 
@@ -146,26 +147,24 @@ const SupportBotPanel: React.FC<SupportBotPanelProps> = ({ onBack }) => {
                 <Avatar icon={<UserOutlined />} size={30} className="!bg-[#30C2EC]" />
               </div>
 
-              <div className="flex justify-start gap-2">
-                <Avatar icon={<RobotOutlined />} size={30} className="!bg-[#30C2EC]" />
-                <div className="max-w-[88%] rounded-2xl rounded-bl-md border border-[#d6eaf8] bg-white px-4 py-3 shadow-sm">
-                  {turn.isLoading ? (
-                    <Spin size="small" />
-                  ) : (
-                    <>
-                      <Text className="whitespace-pre-wrap text-[#234a6b]">{turn.answer}</Text>
-                      {turn.references && turn.references.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {turn.references.map((ref) => (
-                            <Tag key={ref} color="blue" className="!m-0 !rounded-full !text-[11px]">
-                              {ref}
-                            </Tag>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+            {/* Bot answer */}
+            <div className="flex justify-start gap-2">
+              <Avatar icon={<RobotOutlined />} className="!bg-[#2f7dc7] flex-shrink-0" size={32} />
+              <div className="max-w-[86%] rounded-2xl rounded-bl-sm bg-white px-4 py-3 border border-[#d6eaff] shadow-sm">
+                {turn.isLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <>
+                    <Text className="text-[#2f4e6d] whitespace-pre-wrap">{turn.answer}</Text>
+                    {turn.references && turn.references.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {turn.references.map((ref) => (
+                          <Badge key={ref} color="blue" className="!rounded-full !text-xs">{ref}</Badge>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           ))}

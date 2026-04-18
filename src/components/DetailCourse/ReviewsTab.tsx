@@ -1,36 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import {
-  Avatar,
-  Button,
-  Dropdown,
-  Form,
-  Input,
-  List,
-  Modal,
-  Progress,
-  Rate,
-  Select,
-  Tag,
-  Tooltip,
-  Typography,
-  Upload,
-  message,
-} from 'antd';
-import {
-  ClockCircleOutlined,
-  DislikeFilled,
-  DislikeOutlined,
-  ExclamationCircleOutlined,
-  FilterOutlined,
-  FlagOutlined,
-  LikeFilled,
-  LikeOutlined,
-  MoreOutlined,
-  UploadOutlined,
-} from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Rate, Progress, List, Avatar, Form, Input, Upload, Button, Modal, Select, Dropdown, Tooltip, Typography } from 'antd';
+import { ClockCircleOutlined, UploadOutlined, MoreOutlined, FlagOutlined, LikeOutlined, LikeFilled, DislikeOutlined, DislikeFilled, FilterOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useReviewForm } from '../../hooks/useReviewForm';
 import type { Review } from '../../models/course';
 
+import { notify } from '../../utils/notify';
+import Badge from '../common/Tag';
 const { TextArea } = Input;
 const { Text } = Typography;
 
@@ -98,7 +73,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ reviews, stats }) => {
 
   const handleSubmitReport = (values: ReviewReportFormValues) => {
     console.log('Report submitted:', { review: reportingReview, ...values });
-    message.success('Báo cáo đã được gửi. Chúng tôi sẽ xem xét trong thời gian sớm nhất.');
+    notify.success('Báo cáo đã được gửi. Chúng tôi sẽ xem xét trong thời gian sớm nhất.');
     setReportModalOpen(false);
     setReportingReview(null);
     reportForm.resetFields();
@@ -218,10 +193,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ reviews, stats }) => {
                   <div>
                     <h4 className="mb-1 text-base font-bold text-[var(--primaryColor)]">{item.user}</h4>
                     <div className="flex items-center gap-3">
-                      <Rate disabled value={item.rate} className="text-sm text-state-light-orange" />
-                      <Tag className="!rounded-full !border-none !bg-[rgba(48,194,236,0.16)] !text-[var(--textState500Secondary)]">
-                        {item.role}
-                      </Tag>
+                      <Rate disabled defaultValue={item.rate} className="text-sm text-yellow-500" />
+                      <Badge color="blue" className="!rounded-full">{item.role}</Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

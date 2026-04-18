@@ -2,11 +2,7 @@ import React, { useEffect } from 'react';
 import { Layout, theme } from 'antd';
 import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
-import FloatingChatBot from '../Chat/FloatingChatBot';
-import socketService from '../../services/socketService';
-import { getAccessToken } from '../../services/axiosBaseQuery';
-import { friendChatApi } from '../../services/friendChatApi';
-import { useAppDispatch } from '../../redux/hooks';
+import RouteBreadcrumb from './RouteBreadcrumb';
 
 const { Content, Footer } = Layout;
 
@@ -59,6 +55,7 @@ const AppLayout: React.FC = () => {
   return (
     <Layout className="min-h-screen bg-white">
       <Header />
+      <RouteBreadcrumb />
       <Content>
         <Outlet />
       </Content>

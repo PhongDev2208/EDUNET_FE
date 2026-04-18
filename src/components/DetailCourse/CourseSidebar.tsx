@@ -1,12 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { Button, Image, Tag, Modal, Form, Input, Select, message, Tooltip, Typography, Avatar, Spin } from 'antd';
-import { ClockCircleOutlined, CalendarOutlined, FacebookOutlined, TwitterOutlined, YoutubeOutlined, InstagramOutlined, FlagOutlined, HeartOutlined, HeartFilled, ShareAltOutlined, SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined, BookOutlined, HourglassOutlined, StarFilled, TeamOutlined, BarChartOutlined, GlobalOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Button, Image, Modal, Form, Input, Select, Tooltip, Typography, Avatar, Spin } from 'antd';
+import { ClockCircleOutlined, CalendarOutlined, FacebookOutlined, TwitterOutlined, YoutubeOutlined, InstagramOutlined, FlagOutlined, HeartOutlined, HeartFilled, ShareAltOutlined, SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined, BookOutlined, HourglassOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate, formatNumber } from '../../utils/format';
 import { useCheckEnrollmentQuery, useEnrollMeMutation } from '../../services/courseApi';
 import { getAccessToken } from '../../services/axiosBaseQuery';
 import type { Course } from '../../models/course';
 
+import { notify } from '../../utils/notify';
+import Badge from '../common/Tag';
 const { TextArea } = Input;
 const { Text } = Typography;
 
@@ -98,16 +100,16 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
 
   const handleEnroll = async () => {
     if (!isLoggedIn) {
-      message.info('Vui lòng đăng nhập để đăng ký khóa học');
+      notify.info('Vui lòng đăng nhập để đăng ký khóa học');
       navigate('/auth/login');
       return;
     }
     try {
       await enrollMe(courseId).unwrap();
-      message.success('Đăng ký khóa học thành công!');
+      notify.success('Đăng ký khóa học thành công!');
     } catch (err: any) {
       const msg = err?.data?.message || 'Đăng ký khóa học thất bại';
-      message.error(msg);
+      notify.error(msg);
     }
   };
 
@@ -117,23 +119,14 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
 
   const handleReportCourse = (values: CourseReportFormValues) => {
     console.log('Course report submitted:', values);
-    message.success('Báo cáo đã được gửi. Chúng tôi sẽ xem xét trong thời gian sớm nhất.');
+    notify.success('Báo cáo đã được gửi. Chúng tôi sẽ xem xét trong thời gian sớm nhất.');
     setReportModalOpen(false);
     reportForm.resetFields();
   };
 
-  const handleShare = async () => {
-    try {
-      if (!navigator.clipboard?.writeText) {
-        message.warning('Trình duyệt không hỗ trợ sao chép tự động.');
-        return;
-      }
-
-      await navigator.clipboard.writeText(window.location.href);
-      message.success('Đã sao chép liên kết!');
-    } catch {
-      message.error('Không thể sao chép liên kết. Vui lòng thử lại.');
-    }
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    notify.success('Đã sao chép liên kết!');
   };
 
   return (
@@ -180,8 +173,8 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
           <span className="text-3xl font-bold text-state-500-secondary">
             {formatCurrency(displayPrice)}
           </span>
-          {hasDiscount && discountPercent !== null && (
-            <Tag className="detail-course-discount-tag">-{discountPercent}%</Tag>
+          {course.discountPrice && (
+            <Badge color="red" className="!rounded-full !text-sm">-38%</Badge>
           )}
         </div>
         {hasDiscount && (
@@ -282,14 +275,22 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course }) => {
         </div>
       </div>
 
-      <div className="detail-course-surface mb-5 space-y-2.5 p-3.5">
-        <h5 className="text-sm font-semibold uppercase tracking-wide text-[var(--primaryColor)]">Thông tin khóa học</h5>
-        {detailFacts.map((item) => (
-          <div key={item.key} className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-gray-500">
-              {item.icon} {item.label}
-            </span>
-            <span className="text-right font-semibold text-[var(--primaryColor)]">{item.value}</span>
+      {/* Schedule Info */}
+      <div className="space-y-3 mb-6 p-4 bg-gray-50 rounded-xl">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-500 flex items-center gap-2">
+            <ClockCircleOutlined className="text-[#e5698e]" /> Giờ bắt đầu
+          </span>
+          <span className="font-semibold text-[#012643]">{course.time?.startDisplay}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-500 flex items-center gap-2">
+            <CalendarOutlined className="text-[#e5698e]" /> Lịch học
+          </span>
+          <div className="flex gap-1">
+            {course.schedule?.map(day => (
+              <Badge key={day} color="blue" className="!rounded-full">{day}</Badge>
+            ))}
           </div>
         ))}
 
