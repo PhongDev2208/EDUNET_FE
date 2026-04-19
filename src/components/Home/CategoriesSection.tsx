@@ -84,7 +84,7 @@ const CategoriesSection: React.FC = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                         <Badge 
-                          className="!absolute !top-3 !right-3 !border-0 !bg-white/90 !backdrop-blur-sm !rounded-full !px-3 !py-1 !text-[#012643] !font-medium"
+                          className="!absolute !top-3 !right-3 !border-0 !bg-white/95 !backdrop-blur-sm !rounded-full !px-3 !py-1 !text-[#00B1F5] !font-medium"
                         >
                           {cat.courses?.length || 0} Khóa học
                         </Badge>

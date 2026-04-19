@@ -1,6 +1,13 @@
 import React from 'react';
-import { Button } from 'antd';
-import { ClockCircleOutlined, BookOutlined, DollarCircleOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Button, Tag } from 'antd';
+import {
+  ClockCircleOutlined,
+  BookOutlined,
+  DollarCircleOutlined,
+  CalendarOutlined,
+  TeamOutlined,
+  StarFilled,
+} from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import type { Course } from '../../models/course';
 import Badge from './Tag';
