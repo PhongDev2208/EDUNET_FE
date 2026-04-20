@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Checkbox, Modal, Typography, Select } from 'antd';
-import { UserOutlined, LockOutlined, GoogleOutlined, QuestionCircleOutlined, SendOutlined, SafetyCertificateOutlined, TeamOutlined, BookOutlined, MailOutlined, AppleFilled, GithubOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Modal, Typography, Select } from 'antd';
+import { UserOutlined, LockOutlined, QuestionCircleOutlined, SendOutlined, MailOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../../assets/images/Logo.png';
 import BookPanda from '../../../assets/images/Panda/BookPanda.png';
