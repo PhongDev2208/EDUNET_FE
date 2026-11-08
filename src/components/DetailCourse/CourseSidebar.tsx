@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Button, Image, Modal, Form, Input, Select, Tooltip, Typography, Avatar, Spin } from 'antd';
-import { ClockCircleOutlined, CalendarOutlined, FacebookOutlined, TwitterOutlined, YoutubeOutlined, InstagramOutlined, FlagOutlined, HeartOutlined, HeartFilled, ShareAltOutlined, SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined, BookOutlined, HourglassOutlined } from '@ant-design/icons';
+import React, { useMemo, useState } from 'react';
+import { Button, Image, Modal, Form, Input, Select, Tooltip, Typography, Avatar, Spin, Badge, Tag } from 'antd';
+import { ClockCircleOutlined, CalendarOutlined, FacebookOutlined, TwitterOutlined, YoutubeOutlined, InstagramOutlined, FlagOutlined, HeartOutlined, HeartFilled, ShareAltOutlined, SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined, BookOutlined, HourglassOutlined, BarChartOutlined, GlobalOutlined, TeamOutlined, StarFilled } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate, formatNumber } from '../../utils/format';
 import { useCheckEnrollmentQuery, useEnrollMeMutation } from '../../services/courseApi';
